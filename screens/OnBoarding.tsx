@@ -9,14 +9,12 @@ import React from 'react';
 import {Icons} from '../constants/icons';
 import CustomButton from '../components/CustomButton';
 import AppInstructions from '../components/OnBoardingScreen/AppInstructions';
-const OnBoarding = () => {
-  const isDarkMode = useColorScheme() === 'dark';
+import {NavigationProp} from '@react-navigation/native';
+
+const OnBoarding = ({navigation}: {navigation: NavigationProp<any>}) => {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={isDarkMode ? 'lightskyblue' : 'skyblue'}
-      />
+      {/* eslint-disable-next-line react-native/no-inline-styles */}
       <View style={{flex: 0.5}}>
         <AppInstructions />
       </View>
@@ -25,7 +23,7 @@ const OnBoarding = () => {
         title="Get Started"
         isLoading={false}
         textStyles={styles.text}
-        onPress={() => console.log('Get Started')}
+        onPress={() => navigation.navigate('Home')}
         containerStyles={styles.customButtonStyles}
         icon={Icons.arrow}
         imageStyles={styles.imageStyles}
