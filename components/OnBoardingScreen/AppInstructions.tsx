@@ -1,36 +1,53 @@
-import {Image, StyleSheet, View} from 'react-native';
-import React, {useEffect, useState} from 'react';
+import {Dimensions, FlatList, Image, StyleSheet, View} from 'react-native';
+import React, {useRef, useState, useEffect} from 'react';
 import {OnBoardingImages} from '../../constants/images';
 
 const AppInstructions = () => {
-  const [counter, setCounter] = useState<number>(0);
+  const flatListRef = useRef<FlatList>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setCounter(prevCounter =>
-        prevCounter === OnBoardingImages.length - 1 ? 0 : prevCounter! + 1,
-      );
-    }, 2000);
+      const nextIndex =
+        currentIndex + 1 < OnBoardingImages.length ? currentIndex + 1 : 0;
+
+      flatListRef.current?.scrollToIndex({index: nextIndex, animated: true});
+
+      setCurrentIndex(nextIndex);
+    }, 3000);
+
     return () => clearInterval(interval);
-  }, [counter]);
+  }, [currentIndex]);
+
   return (
-    <View style={styles.imageContainer}>
-      <Image
-        source={OnBoardingImages[counter]}
-        style={styles.image}
-        resizeMode="contain"
+    <View>
+      <FlatList
+        ref={flatListRef}
+        data={OnBoardingImages}
+        keyExtractor={item => item.id.toString()}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        renderItem={({item}) => (
+          <Image
+            source={item.image}
+            style={styles.image}
+            resizeMode="contain"
+          />
+        )}
+        onScrollToIndexFailed={() => {
+          flatListRef.current?.scrollToIndex({index: 0, animated: true});
+        }}
       />
     </View>
   );
 };
+
 const styles = StyleSheet.create({
-  imageContainer: {
-    width: '100%',
-    height: '80%',
-    backgroundColor: 'transparent',
-  },
   image: {
-    width: '100%',
-    height: '100%',
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height * 0.5,
   },
 });
 

@@ -17,18 +17,19 @@ const OnBoarding = () => {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={isDarkMode ? 'lightskyblue' : 'skyblue'}
       />
-      <View style={styles.wrapper}>
+      <View style={{flex: 0.5}}>
         <AppInstructions />
-        <CustomButton
-          title="Get Started"
-          isLoading={false}
-          textStyles={styles.text}
-          onPress={() => console.log('Get Started')}
-          containerStyles={styles.customButtonStyles}
-          icon={Icons.arrow}
-          imageStyles={styles.imageStyles}
-        />
       </View>
+
+      <CustomButton
+        title="Get Started"
+        isLoading={false}
+        textStyles={styles.text}
+        onPress={() => console.log('Get Started')}
+        containerStyles={styles.customButtonStyles}
+        icon={Icons.arrow}
+        imageStyles={styles.imageStyles}
+      />
     </SafeAreaView>
   );
 };
@@ -37,14 +38,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'skyblue',
-  },
-  wrapper: {
-    width: '100%',
-    flex: 1,
     alignItems: 'center',
-    marginVertical: '8%',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
   },
+
   text: {
     color: 'white',
     marginLeft: '30%',
