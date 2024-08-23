@@ -1,20 +1,50 @@
-import React from 'react';
-import { Text, Image, StyleSheet, SafeAreaView, ImageBackground } from 'react-native';
+import React, {useEffect, useRef} from 'react';
+import {
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  useColorScheme,
+  Animated,
+} from 'react-native';
 
 const Splash: React.FC = () => {
+  const isDarkMode = useColorScheme() === 'dark';
+
+  const fadeAnimImage = useRef(new Animated.Value(0)).current;
+  const fadeAnimTitle = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(fadeAnimImage, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnimTitle, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnimImage, fadeAnimTitle]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Use ImageBackground for the background image */}
-      <ImageBackground
-        source={require('../assets/cloud.jpeg')} // Replace this with your background image path
-        style={styles.background}
-        resizeMode="cover" // Ensures the image covers the entire screen
-      >
-        {/* Foreground content */}
-        <Image source={require('../assets/cloudy.png')} style={styles.image} />
-        <Text style={styles.title}>ClimaVista</Text>
-        <Text style={styles.subtitle}>Your quick weather report</Text>
-      </ImageBackground>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={isDarkMode ? 'lightskyblue' : 'skyblue'}
+      />
+      <Animated.Image
+        source={require('../assets/cloudy.png')}
+        style={[styles.image, {opacity: fadeAnimImage}]}
+        resizeMode="contain"
+      />
+      <Animated.Text style={[styles.title, {opacity: fadeAnimTitle}]}>
+        ClimaVista
+      </Animated.Text>
+      <Animated.Text style={[styles.subtitle, {opacity: fadeAnimTitle}]}>
+        Your quick weather report
+      </Animated.Text>
     </SafeAreaView>
   );
 };
@@ -22,25 +52,22 @@ const Splash: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-  },
-  background: {
-    flex: 1,
+    backgroundColor: 'skyblue',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 10,
   },
   image: {
     width: 150,
     height: 150,
-    marginTop: 100,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
-
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'grey',
   },
 });
