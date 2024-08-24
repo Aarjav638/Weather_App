@@ -63,12 +63,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: 'white',
+    fontFamily: 'Poppins-Bold',
   },
   subtitle: {
     fontSize: 16,
     color: 'grey',
+    fontFamily: 'Poppins-Regular',
   },
 });
 

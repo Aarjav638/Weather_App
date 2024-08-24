@@ -2,7 +2,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image,
+  Animated,
   ImageSourcePropType,
 } from 'react-native';
 import React from 'react';
@@ -28,10 +28,15 @@ const CustomButton = ({
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
-      style={[containerStyles, styles.container]}
+      style={{...styles.container, ...containerStyles}}
       disabled={isLoading}>
-      <Text style={[textStyles, styles.text]}>{title}</Text>
-      {icon && <Image source={icon} style={[styles.image, imageStyles]} />}
+      <Text style={{...styles.text, ...textStyles}}>{title}</Text>
+      {icon && (
+        <Animated.Image
+          source={icon}
+          style={{...styles.image, ...imageStyles}}
+        />
+      )}
     </TouchableOpacity>
   );
 };
@@ -52,6 +57,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
+    fontFamily: 'Poppins-Medium',
   },
 });
 export default CustomButton;
