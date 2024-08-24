@@ -1,19 +1,43 @@
 import React, {useEffect, useState} from 'react';
-import Splash from './screens/Splash';
+import {View, StyleSheet, Animated} from 'react-native';
 import Navigator from './components/Navigator';
+import Splash from './screens/Splash';
 
 const App = () => {
-  const [isSplash, setIsSplash] = useState(true);
-  useEffect(() => {
-    setTimeout(() => {
-      setIsSplash(false);
-    }, 3000);
-  }, []);
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const [fadeAnim] = useState(new Animated.Value(1));
 
-  if (isSplash) {
-    return <Splash />;
-  }
-  return <Navigator />;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsSplashVisible(false);
+      });
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [fadeAnim]);
+
+  return (
+    <View style={{flex: 1}}>
+      <Navigator />
+      {isSplashVisible && (
+        <Animated.View style={[styles.splashContainer, {opacity: fadeAnim}]}>
+          <Splash />
+        </Animated.View>
+      )}
+    </View>
+  );
 };
+
+const styles = StyleSheet.create({
+  splashContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+});
 
 export default App;
