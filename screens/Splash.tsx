@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
+    fontFamily: 'Popins-Bold',
   },
   subtitle: {
     fontSize: 16,
