@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
+import {View, Text, StyleSheet, Image, Dimensions} from 'react-native';
 import React from 'react';
 
-const { width } = Dimensions.get('window'); // Get device width
+const {width} = Dimensions.get('window'); // Get device width
 
-const CitiesCardView = ({city}:{city:string}) => {
+const CitiesCardView = ({city}: {city: string}) => {
   return (
     <View style={styles.container}>
       <View style={styles.smallContainer}>
@@ -29,15 +29,15 @@ const styles = StyleSheet.create({
     padding: width * 0.08, // Padding relative to screen width
     borderRadius: 10,
     shadowColor: '#171717',
-    shadowOffset: { width: -2, height: 4 },
+    shadowOffset: {width: -2, height: 4},
     shadowOpacity: 0.2,
     shadowRadius: 3,
-    elevation:8,
+    elevation: 8,
   },
   textLeft: {
     color: 'white',
     fontSize: width * 0.05, // Make font size responsive
-    flex: 1, // Let the text take as much space as it needs
+    fontFamily: 'Poppins-Bold', // Use a custom font
   },
   textLeft2: {
     color: 'white',
@@ -46,8 +46,8 @@ const styles = StyleSheet.create({
   textRight: {
     color: 'white',
     fontSize: width * 0.05,
-    flex: 1, // Distribute space evenly
-    textAlign: 'right', // Align to the right instead of using marginLeft
+    textAlign: 'right',
+    flex: 1,
   },
   textRight2: {
     color: 'white',
@@ -57,8 +57,8 @@ const styles = StyleSheet.create({
   },
   smallContainer: {
     flexDirection: 'row',
-    alignItems: 'center', // Vertically center items in the row
-    justifyContent: 'space-between', // Ensure space is distributed
+    alignItems: 'center',
+    gap: 10,
   },
   smallContainer2: {
     flexDirection: 'row',
@@ -68,7 +68,6 @@ const styles = StyleSheet.create({
   image: {
     height: width * 0.05, // Responsive image size
     width: width * 0.05, // Responsive image size
-    marginLeft: 4,
   },
 });
 
