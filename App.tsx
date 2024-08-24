@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from 'react';
 import Splash from './screens/Splash';
-import OnBoarding from './screens/OnBoarding';
 import Navigator from './components/Navigator';
 
 const App = () => {
