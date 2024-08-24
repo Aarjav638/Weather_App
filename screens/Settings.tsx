@@ -58,7 +58,6 @@ const Settings = () => {
   return (
     <TouchableWithoutFeedback onPress={closeAllDropdowns}>
       <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.heading}>Settings</Text>
         <View style={styles.mainContainer}>
           {/* Temperature Dropdown */}
           <View style={{zIndex: openTemperature ? 3000 : 1}}>
