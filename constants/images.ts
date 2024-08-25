@@ -3,6 +3,9 @@ import {ImageSourcePropType} from 'react-native';
 // Defining the ImageInterface type
 type ImageInterface = {
   logo?: ImageSourcePropType;
+  cloudyWeather?: ImageSourcePropType;
+  sunnyWeather?: ImageSourcePropType;
+  sunnyWeather1?: ImageSourcePropType;
 };
 
 type OnBoardingImageInterface = {
@@ -13,6 +16,9 @@ type OnBoardingImageInterface = {
 // Exporting images for use
 export const Images: ImageInterface = {
   logo: require('../assets/cloudy.png'),
+  cloudyWeather: require('../assets/cloudyWeather.png'),
+  sunnyWeather: require('../assets/sunny.jpg'),
+  sunnyWeather1: require('../assets/sunny1.jpg'),
 };
 
 export const OnBoardingImages: OnBoardingImageInterface[] = [

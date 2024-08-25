@@ -3,17 +3,17 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
 import Home from '../screens/Home';
 import OnBoarding from '../screens/OnBoarding';
-import {StatusBar, useColorScheme} from 'react-native';
+import {StatusBar} from 'react-native';
 import ManageCities from '../screens/Managecities';
 import Settings from '../screens/Settings';
 const Navigator = () => {
-  const isDarkMode = useColorScheme() === 'dark';
   const Stack = createNativeStackNavigator();
   return (
     <NavigationContainer>
       <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={isDarkMode ? 'lightskyblue' : 'skyblue'}
+        barStyle="light-content"
+        backgroundColor={'transparent'}
+        translucent={true}
       />
       <Stack.Navigator
         initialRouteName="OnBoarding"
