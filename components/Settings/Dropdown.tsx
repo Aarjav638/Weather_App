@@ -1,18 +1,16 @@
 import DropDownPicker from 'react-native-dropdown-picker';
 import React from 'react';
-import {Items} from '../screens/Settings';
+import {Items} from '../../screens/Settings';
 import {StyleSheet, View, Image} from 'react-native';
+import {Icons} from '../../constants/icons';
 const TickIcon = () => {
   return (
     <View>
-      <Image
-        source={require('../assets/check.png')}
-        style={styles.image}
-        resizeMode="contain"
-      />
+      <Image source={Icons.check} style={styles.image} resizeMode="contain" />
     </View>
   );
 };
+
 const Dropdown = ({
   open,
   setOpen,
@@ -22,9 +20,8 @@ const Dropdown = ({
 }: {
   open: boolean;
   value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
+  setValue: React.Dispatch<React.SetStateAction<any>>;
   items: Items[];
-  setItems: React.Dispatch<React.SetStateAction<Items[]>>;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   return (

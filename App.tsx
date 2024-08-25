@@ -22,7 +22,7 @@ const App = () => {
   }, [fadeAnim]);
 
   return (
-    <View style={{flex: 1}}>
+    <View style={styles.container}>
       <Navigator />
       {isSplashVisible && (
         <Animated.View style={[styles.splashContainer, {opacity: fadeAnim}]}>
@@ -37,6 +37,9 @@ const styles = StyleSheet.create({
   splashContainer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
+  },
+  container: {
+    flex: 1,
   },
 });
 
