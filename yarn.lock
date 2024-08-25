@@ -1155,16 +1155,6 @@
   resolved "https://registry.npmjs.org/@eslint/js/-/js-8.57.0.tgz"
   integrity sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==
 
-"@geoapify/geocoder-autocomplete@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/@geoapify/geocoder-autocomplete/-/geocoder-autocomplete-2.0.1.tgz"
-  integrity sha512-uylT+V33dcYsCdTfmzx6kH6wgQLaGWeGYY4S1ko54W6wTYfua2VfMV6rOvaxqYg3J8WFCtWoUozWG8Xm3p3h+w==
-
-"@geoapify/react-geocoder-autocomplete@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/@geoapify/react-geocoder-autocomplete/-/react-geocoder-autocomplete-2.0.0.tgz"
-  integrity sha512-O95xF1AQfbgUlBGKmzvmj6LX8w5pcoPIXqLKr4irzN1ROCfkyKqi+k4eNUD0OVDWK4dZDL2XPd7xPCZsJxMGWw==
-
 "@hapi/hoek@^9.0.0", "@hapi/hoek@^9.3.0":
   version "9.3.0"
   resolved "https://registry.npmjs.org/@hapi/hoek/-/hoek-9.3.0.tgz"
@@ -2032,6 +2022,11 @@
   version "15.7.12"
   resolved "https://registry.npmjs.org/@types/prop-types/-/prop-types-15.7.12.tgz"
   integrity sha512-5zvhXYtRNRluoE/jAp4GVsSduVUzNWKkOZrCDBWYtE7biZywwdC2AcEzg+cSMLFRfVgeAFqpfNabiPjxFddV1Q==
+
+"@types/react-native-sqlite-storage@^6.0.5":
+  version "6.0.5"
+  resolved "https://registry.npmjs.org/@types/react-native-sqlite-storage/-/react-native-sqlite-storage-6.0.5.tgz"
+  integrity sha512-1gPwgYil6pHV/EDF816M8KmVsQC5nGMTAm8OMC25GbyuBaXFn7sdguMq6A2owtXB8c4qsH2tOEIQNetbOquawA==
 
 "@types/react-native-vector-icons@^6.4.18":
   version "6.4.18"
@@ -5621,11 +5616,6 @@ p-try@^2.0.0:
   resolved "https://registry.npmjs.org/p-try/-/p-try-2.2.0.tgz"
   integrity sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==
 
-paper@^0.12.18:
-  version "0.12.18"
-  resolved "https://registry.npmjs.org/paper/-/paper-0.12.18.tgz"
-  integrity sha512-ZSLIEejQTJZuYHhSSqAf4jXOnii0kPhCJGAnYAANtdS72aNwXJ9cP95tZHgq1tnNpvEwgQhggy+4OarviqTCGw==
-
 parent-module@^1.0.0:
   version "1.0.1"
   resolved "https://registry.npmjs.org/parent-module/-/parent-module-1.0.1.tgz"
@@ -5848,14 +5838,6 @@ react-devtools-core@^5.3.1:
     shell-quote "^1.6.1"
     ws "^7"
 
-react-dom@^18.2.0:
-  version "18.3.1"
-  resolved "https://registry.npmjs.org/react-dom/-/react-dom-18.3.1.tgz"
-  integrity sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==
-  dependencies:
-    loose-envify "^1.1.0"
-    scheduler "^0.23.2"
-
 react-freeze@^1.0.0:
   version "1.0.4"
   resolved "https://registry.npmjs.org/react-freeze/-/react-freeze-1.0.4.tgz"
@@ -5930,6 +5912,11 @@ react-native-screens@^3.34.0, "react-native-screens@>= 3.0.0":
     react-freeze "^1.0.0"
     warn-once "^0.1.0"
 
+react-native-sqlite-storage@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.npmjs.org/react-native-sqlite-storage/-/react-native-sqlite-storage-6.0.1.tgz"
+  integrity sha512-1tDFjrint6X6qSYKf3gDyz+XB+X79jfiL6xTugKHPRtF0WvqMtVgdLuNqZunIXjNEvNtNVEbXaeZ6MsguFu00A==
+
 react-native-vector-icons@*, react-native-vector-icons@^10.1.0:
   version "10.1.0"
   resolved "https://registry.npmjs.org/react-native-vector-icons/-/react-native-vector-icons-10.1.0.tgz"
@@ -5938,7 +5925,7 @@ react-native-vector-icons@*, react-native-vector-icons@^10.1.0:
     prop-types "^15.7.2"
     yargs "^16.1.1"
 
-react-native@*, react-native@^0.75.2, react-native@>=0.11, react-native@>=0.65.0:
+react-native@*, react-native@^0.75.2, react-native@>=0.11, react-native@>=0.14.0, react-native@>=0.65.0:
   version "0.75.2"
   resolved "https://registry.npmjs.org/react-native/-/react-native-0.75.2.tgz"
   integrity sha512-pP+Yswd/EurzAlKizytRrid9LJaPJzuNldc+o5t01md2VLHym8V7FWH2z9omFKtFTer8ERg0fAhG1fpd0Qq6bQ==
