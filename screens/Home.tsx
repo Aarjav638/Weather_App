@@ -12,6 +12,8 @@ import SevenDaysForecast from '../components/Home/SevenDaysForecast';
 import useConnection from '../hooks/useConnection';
 import {Snackbar, Text} from 'react-native-paper';
 import UnitsDetails from '../components/Home/UnitsDetails';
+import AirQuality from '../components/Home/AirQuality';
+import SunriseSunset from '../components/Home/SunRiseSunset';
 
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   const isConnected = useConnection();
@@ -27,6 +29,10 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
       setVisible(true);
     }
   }, [isConnected]);
+
+  // Example data for SunriseSunset component
+  const sunrise = new Date().setHours(5, 55, 0); // Example sunrise time
+  const sunset = new Date().setHours(18, 50, 0); // Example sunset time
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,7 +50,11 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
         <FlatListSuggestion />
         <HorizontalWeatherDetails />
         <SevenDaysForecast />
+
+        <AirQuality value={70} />
         <UnitsDetails />
+
+        <SunriseSunset sunrise={sunrise} sunset={sunset} />
       </ScrollView>
       <View style={styles.snackbarContainer}>
         <Snackbar
@@ -53,7 +63,7 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
           duration={Snackbar.DURATION_SHORT}
           style={styles.snackbar}>
           <Text style={styles.snackBarText}>
-            No Internet!,Connect to Cellular or Wifi Network
+            No Internet! Connect to Cellular or Wifi Network
           </Text>
         </Snackbar>
       </View>
