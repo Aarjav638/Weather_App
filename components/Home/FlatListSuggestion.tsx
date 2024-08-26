@@ -80,10 +80,11 @@ const styles = StyleSheet.create({
   container: {
     minHeight: 150,
     maxHeight: 150,
-    width: width * 0.9,
+    width: width * 0.91,
     padding: 10,
     borderRadius: 10,
     alignItems: 'center',
+    marginVertical: 10,
     justifyContent: 'space-between',
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
