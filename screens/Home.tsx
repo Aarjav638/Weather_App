@@ -19,7 +19,9 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
         source={Images.sunnyWeather}
       />
       <Header navigation={navigation} city="Kairana" />
-      <ScrollView contentContainerStyle={styles.scrollView}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollView}>
         <Temperatrure />
         <PollenStatus />
         <FlatListSuggestion />
