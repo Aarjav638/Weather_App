@@ -11,6 +11,7 @@ import HorizontalWeatherDetails from '../components/Home/HorizontalWeatherDetail
 import SevenDaysForecast from '../components/Home/SevenDaysForecast';
 import useConnection from '../hooks/useConnection';
 import {Snackbar, Text} from 'react-native-paper';
+import UnitsDetails from '../components/Home/UnitsDetails';
 
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   const isConnected = useConnection();
@@ -43,27 +44,15 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
         <FlatListSuggestion />
         <HorizontalWeatherDetails />
         <SevenDaysForecast />
+        <UnitsDetails />
       </ScrollView>
-      <View style={{alignItems: 'center', flex: 1}}>
+      <View style={styles.snackbarContainer}>
         <Snackbar
           visible={visible}
           onDismiss={onDismissSnackBar}
-          // duration={Snackbar.DURATION_SHORT}
-          style={{
-            justifyContent: 'center',
-            // alignItems: 'center',
-            borderRadius: 10,
-            maxHeight: 70,
-            backgroundColor: 'rgba(0,0,0,0.8)',
-          }}>
-          <Text
-            style={{
-              color: 'white',
-              fontFamily: 'Poppins-Regular',
-              fontSize: 12,
-              textAlign: 'center',
-            }}>
-            {' '}
+          duration={Snackbar.DURATION_SHORT}
+          style={styles.snackbar}>
+          <Text style={styles.snackBarText}>
             No Internet!,Connect to Cellular or Wifi Network
           </Text>
         </Snackbar>
@@ -85,6 +74,20 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   scrollView: {flexGrow: 1},
+  snackbarContainer: {alignItems: 'center', flex: 1},
+  snackbar: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    maxHeight: 70,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+  },
+  snackBarText: {
+    color: 'white',
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    textAlign: 'center',
+  },
 });
 
 export default Home;
