@@ -28,7 +28,7 @@ const PollenStatus = () => {
 
   const animatedHeight = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 60],
+    outputRange: [0, 80], // Adjust the height range according to the content size
   });
   return (
     <TouchableOpacity
@@ -82,6 +82,8 @@ const styles = StyleSheet.create({
     flex: 0.05,
     paddingHorizontal: 20,
     marginVertical: '4%',
+    minHeight: 50,
+    paddingVertical: 14,
   },
   insideContainer: {
     flexDirection: 'row',

@@ -6,6 +6,7 @@ type ImageInterface = {
   cloudyWeather?: ImageSourcePropType;
   sunnyWeather?: ImageSourcePropType;
   sunnyWeather1?: ImageSourcePropType;
+  cloudy2?: ImageSourcePropType;
 };
 
 type OnBoardingImageInterface = {
@@ -19,6 +20,7 @@ export const Images: ImageInterface = {
   cloudyWeather: require('../assets/cloudyWeather.png'),
   sunnyWeather: require('../assets/sunny.jpg'),
   sunnyWeather1: require('../assets/sunny1.jpg'),
+  cloudy2: require('../assets/cloudy2.png'),
 };
 
 export const OnBoardingImages: OnBoardingImageInterface[] = [

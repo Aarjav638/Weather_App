@@ -7,6 +7,8 @@ import {Images} from '../constants/images';
 import PollenStatus from '../components/Home/PollenStatus';
 import Temperatrure from '../components/Home/Temperatrure';
 import FlatListSuggestion from '../components/Home/FlatListSuggestion';
+import HorizontalWeatherDetails from '../components/Home/HorizontalWeatherDetails';
+import SevenDaysForecast from '../components/Home/SevenDaysForecast';
 
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   return (
@@ -21,6 +23,8 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
         <Temperatrure />
         <PollenStatus />
         <FlatListSuggestion />
+        <HorizontalWeatherDetails />
+        <SevenDaysForecast />
       </ScrollView>
     </SafeAreaView>
   );
