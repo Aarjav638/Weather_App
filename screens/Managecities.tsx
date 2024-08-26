@@ -54,7 +54,7 @@ const ManageCities = () => {
     const toggleModal = () => {
         setModalVisible(!isModalVisible);
     };
-
+        console.log(response);
     return (
     <View style={{flex: 1}}>
             <CitiesCardView city={city} />
@@ -101,7 +101,7 @@ const ManageCities = () => {
                         fontFamily: 'Poppins-Medium',
                         marginBottom: 10,
                       }}>
-                                            {item.city}
+                                            {item.city} , {item.state} , {item.country}
                                         </Text>
                                     </View>
                                 ) : null
