@@ -6,6 +6,7 @@ import {NavigationProp} from '@react-navigation/native';
 import {Images} from '../constants/images';
 import PollenStatus from '../components/Home/PollenStatus';
 import Temperatrure from '../components/Home/Temperatrure';
+import FlatListSuggestion from '../components/Home/FlatListSuggestion';
 
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   return (
@@ -19,6 +20,7 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
       <ScrollView contentContainerStyle={styles.scrollView}>
         <Temperatrure />
         <PollenStatus />
+        <FlatListSuggestion />
       </ScrollView>
     </SafeAreaView>
   );

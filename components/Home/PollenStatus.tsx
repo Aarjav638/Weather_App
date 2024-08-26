@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 const PollenStatus = () => {
   const [show, setShow] = React.useState(false);
   const rotate = React.useRef(new Animated.Value(0)).current;
-  const slideAnim = React.useRef(new Animated.Value(0)).current; // Animation for slide down/up
+  const slideAnim = React.useRef(new Animated.Value(0)).current;
 
   const spin = rotate.interpolate({
     inputRange: [0, 1],
@@ -28,7 +28,7 @@ const PollenStatus = () => {
 
   const animatedHeight = slideAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 60], // Adjust the height range according to the content size
+    outputRange: [0, 60],
   });
   return (
     <TouchableOpacity
