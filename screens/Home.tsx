@@ -6,6 +6,9 @@ import {NavigationProp} from '@react-navigation/native';
 import {Images} from '../constants/images';
 import PollenStatus from '../components/Home/PollenStatus';
 import Temperatrure from '../components/Home/Temperatrure';
+import HorizontalWeatherDetails from '../components/Home/HorizontalWeatherDetails';
+import SevenDaysForecast from '../components/Home/SevenDaysForecast';
+import UnitsDetails from '../components/Home/UnitsDetails';
 
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   return (
@@ -19,6 +22,8 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
       <ScrollView contentContainerStyle={styles.scrollView}>
         <Temperatrure />
         <PollenStatus />
+        <HorizontalWeatherDetails/>
+        <SevenDaysForecast/>
       </ScrollView>
     </SafeAreaView>
   );
