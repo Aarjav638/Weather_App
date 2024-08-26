@@ -11,14 +11,14 @@ const App = () => {
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 500,
+        duration: 1000,
         useNativeDriver: true,
       }).start(() => {
         setIsSplashVisible(false);
       });
-    }, 3000); // Show splash for 3 seconds
+    }, 5000);
 
-    return () => clearTimeout(timer); // Cleanup timer on unmount
+    return () => clearTimeout(timer);
   }, [fadeAnim]);
 
   return (
@@ -36,7 +36,7 @@ const App = () => {
 const styles = StyleSheet.create({
   splashContainer: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1, // Ensure splash screen stays above everything else
+    zIndex: 1,
   },
   container: {
     flex: 1,
