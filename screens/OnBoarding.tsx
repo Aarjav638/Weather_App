@@ -5,8 +5,15 @@ import CustomButton from '../components/CustomButton';
 import AppInstructions from '../components/OnBoardingScreen/AppInstructions';
 import {NavigationProp} from '@react-navigation/native';
 import {Dimensions} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const OnBoarding = ({navigation}: {navigation: NavigationProp<any>}) => {
   const translateX = useRef(new Animated.Value(0)).current;
+
+  const generateTempId = async () => {
+    const tempId = 'temp-' + Math.random().toString(36).substr(2, 9);
+    await AsyncStorage.setItem('tempId', tempId);
+    console.log('Generated temp ID:', tempId);
+  };
 
   useEffect(() => {
     const screenWidth = -Dimensions.get('window').width;
@@ -37,7 +44,10 @@ const OnBoarding = ({navigation}: {navigation: NavigationProp<any>}) => {
         title="Get Started"
         isLoading={false}
         textStyles={styles.text}
-        onPress={() => navigation.navigate('Home')}
+        onPress={() => {
+          navigation.navigate('Home');
+          generateTempId();
+        }}
         containerStyles={styles.customButtonStyles}
         icon={Icons.arrow}
         imageStyles={{transform: [{translateX}]}}

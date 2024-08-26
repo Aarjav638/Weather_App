@@ -5,7 +5,7 @@ import Splash from './screens/Splash';
 
 const App = () => {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
-  const [fadeAnim] = useState(new Animated.Value(1));
+  const fadeAnim = useState(new Animated.Value(1))[0]; // Single state instance
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -16,9 +16,9 @@ const App = () => {
       }).start(() => {
         setIsSplashVisible(false);
       });
-    }, 3000);
+    }, 3000); // Show splash for 3 seconds
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer); // Cleanup timer on unmount
   }, [fadeAnim]);
 
   return (
@@ -36,7 +36,7 @@ const App = () => {
 const styles = StyleSheet.create({
   splashContainer: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
+    zIndex: 1, // Ensure splash screen stays above everything else
   },
   container: {
     flex: 1,
