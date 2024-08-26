@@ -9,6 +9,7 @@ import Temperatrure from '../components/Home/Temperatrure';
 import FlatListSuggestion from '../components/Home/FlatListSuggestion';
 import HorizontalWeatherDetails from '../components/Home/HorizontalWeatherDetails';
 import SevenDaysForecast from '../components/Home/SevenDaysForecast';
+import UnitsDetails from '../components/Home/UnitsDetails';
 
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   return (
@@ -27,6 +28,7 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
         <FlatListSuggestion />
         <HorizontalWeatherDetails />
         <SevenDaysForecast />
+        <UnitsDetails/>
       </ScrollView>
     </SafeAreaView>
   );
