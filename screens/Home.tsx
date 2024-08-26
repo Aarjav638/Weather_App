@@ -24,7 +24,6 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
         <PollenStatus />
         <HorizontalWeatherDetails/>
         <SevenDaysForecast/>
-        <UnitsDetails/>
       </ScrollView>
     </SafeAreaView>
   );
