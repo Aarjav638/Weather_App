@@ -1,13 +1,38 @@
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
+import {StatusBar} from 'react-native';
 import Home from '../screens/Home';
 import OnBoarding from '../screens/OnBoarding';
-import {StatusBar} from 'react-native';
 import ManageCities from '../screens/Managecities';
 import Settings from '../screens/Settings';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const Navigator = () => {
+  const [tempId, setTempId] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  const getTempId = async () => {
+    try {
+      const temp_Id = await AsyncStorage.getItem('tempId');
+      setTempId(temp_Id);
+    } catch (error) {
+      console.error('Failed to load tempId:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    getTempId();
+  }, []);
+
   const Stack = createNativeStackNavigator();
+
+  if (loading) {
+    return null;
+  }
+
   return (
     <NavigationContainer>
       <StatusBar
@@ -16,7 +41,7 @@ const Navigator = () => {
         translucent={true}
       />
       <Stack.Navigator
-        initialRouteName="OnBoarding"
+        initialRouteName={tempId ? 'Home' : 'OnBoarding'}
         screenOptions={{
           headerShown: false,
         }}>

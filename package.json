@@ -10,6 +10,8 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.0.0",
+    "@react-native-community/netinfo": "^6.2.1",
     "@react-native/virtualized-lists": "^0.75.2",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",

@@ -17,7 +17,7 @@ type OnBoardingImageInterface = {
 // Exporting images for use
 export const Images: ImageInterface = {
   logo: require('../assets/cloudy.png'),
-  cloudyWeather: require('../assets/cloudyWeather.png'),
+  cloudyWeather: require('../assets/cloudyWeather.jpg'),
   sunnyWeather: require('../assets/sunny.jpg'),
   sunnyWeather1: require('../assets/sunny1.jpg'),
   cloudy2: require('../assets/cloudy2.png'),

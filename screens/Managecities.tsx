@@ -69,17 +69,16 @@ const ManageCities = () => {
             setDebouncedQuery(searchQuery);
         }, 100); // 300ms debounce delay
 
-        return () => {
-            clearTimeout(handler); // Clear timeout if the input changes within 300ms
-        };
-    }, [searchQuery]);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
-    // Fetch the locations when the debouncedQuery changes
-    useEffect(() => {
-        if (debouncedQuery.length > 0) {
-            getLocations(debouncedQuery);
-        }
-    }, [debouncedQuery]);
+  useEffect(() => {
+    if (debouncedQuery.length > 0) {
+      getLocations(debouncedQuery);
+    }
+  }, [debouncedQuery]);
 
     const getLocations = async (searchQuery: string) => {
         try {
@@ -102,9 +101,9 @@ const ManageCities = () => {
         <View style={{ flex: 1 }}>
             <CitiesCardView cityname={cityname} fetchCityDetails={fetchCityDetails} />
 
-            <TouchableOpacity style={styles.actionButtonIcon} onPress={toggleModal}>
-                <Icon name="add-outline" style={styles.icon} />
-            </TouchableOpacity>
+      <TouchableOpacity style={styles.actionButtonIcon} onPress={toggleModal}>
+        <Icon name="add-outline" style={styles.icon} />
+      </TouchableOpacity>
 
             <Modal
                 isVisible={isModalVisible}
@@ -159,56 +158,70 @@ const ManageCities = () => {
 };
 
 const styles = StyleSheet.create({
-    actionButtonIcon: {
-        borderRadius: 62,
-        backgroundColor: 'red',
-        height: 62,
-        width: 62,
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'absolute',
-        bottom: 80,
-        right: 20,
-        elevation: 10,
-        shadowColor: 'black',
-    },
-    container: {
-        flex: 1,
-        backgroundColor: 'white',
-        borderTopEndRadius: 20,
-        borderTopStartRadius: 20,
-    },
-    maincontainer: {
-        flexDirection: 'row',
-        paddingTop: 22,
-        paddingHorizontal: 16,
-    },
-    icon: {
-        fontSize: 40,
-        fontWeight: 'bold',
-    },
-    cancel: {
-        color: 'blue',
-        fontFamily: 'Poppins-Regular',
-        fontSize: 16,
-        flex: 0.8,
-    },
-    addcity: {
-        color: 'black',
-        fontFamily: 'Poppins-Medium',
-        fontSize: 16,
-        textAlign: 'left',
-        flex: 1,
-    },
-    Searchbar: {
-        padding: 20,
-    },
-    flatview: {
-        flex: 1,
-        maxHeight: '35%',
-        width: '85%',
-        alignSelf: 'center',
-    },
+  actionButtonIcon: {
+    borderRadius: 62,
+    backgroundColor: 'red',
+    height: 62,
+    width: 62,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    elevation: 10,
+    shadowColor: 'black',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderTopEndRadius: 20,
+    borderTopStartRadius: 20,
+  },
+  maincontainer: {
+    flexDirection: 'row',
+    paddingTop: 22,
+    paddingHorizontal: 16,
+  },
+  icon: {
+    fontSize: 40,
+    fontWeight: 'bold',
+  },
+  cancel: {
+    color: 'blue',
+    fontFamily: 'Poppins-Regular',
+    fontSize: 16,
+    flex: 0.8,
+  },
+  addcity: {
+    color: 'black',
+    fontFamily: 'Poppins-Medium',
+    fontSize: 16,
+    textAlign: 'left',
+    flex: 1,
+  },
+  Searchbar: {
+    padding: 20,
+  },
+  flatview: {
+    flex: 1,
+    maxHeight: '35%',
+    width: '85%',
+    alignSelf: 'center',
+  },
+  snackbar: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    maxHeight: 70,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    bottom: 15,
+  },
+  snackBarText: {
+    color: 'white',
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    textAlign: 'center',
+  },
 });
 
 export default ManageCities;
