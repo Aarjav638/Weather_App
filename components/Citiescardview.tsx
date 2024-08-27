@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -7,30 +7,41 @@ import {
   Dimensions,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { connectToDatabase } from '../android/app/db/db';
-import { deleteCity } from '../android/app/db/Insertcityname';
+import {connectToDatabase} from '../android/app/db/db';
+import {deleteCity, getCityName} from '../android/app/db/Insertcityname';
+import {useLocationWeather} from '../context/getLoactionWeather/getLocationWeather';
+import {NavigationProp} from '@react-navigation/native';
 
-// Define the type for the City prop
 interface City {
   id: number;
   cityName: string;
   state: string;
   country: string;
+  temperature: number;
+  airQuality?: string;
 }
 
-// Define the props for the CitiesCardView component
 interface CitiesCardViewProps {
+  navigation: NavigationProp<any>;
   cityname: City[];
+  loading: boolean;
   fetchCityDetails: () => void;
 }
 
-const { width } = Dimensions.get('window'); // Get device width
+const {width} = Dimensions.get('window');
 
-const CitiesCardView: React.FC<CitiesCardViewProps> = ({ cityname, fetchCityDetails }) => {
+const CitiesCardView: React.FC<CitiesCardViewProps> = ({
+  navigation,
+  loading,
+  cityname,
+  fetchCityDetails,
+}) => {
   const [selectedCities, setSelectedCities] = useState<Set<number>>(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
+  const {setSelectedCity} = useLocationWeather();
 
   const handleLongPress = (id: number) => {
     setSelectionMode(true);
@@ -38,7 +49,7 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({ cityname, fetchCityDeta
   };
 
   const toggleSelection = (id: number) => {
-    setSelectedCities((prevSelected) => {
+    setSelectedCities(prevSelected => {
       const newSelected = new Set(prevSelected);
       if (newSelected.has(id)) {
         newSelected.delete(id);
@@ -53,59 +64,78 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({ cityname, fetchCityDeta
     try {
       const db = await connectToDatabase();
       for (const id of selectedCities) {
-        await deleteCity(db, id); // Implement the deleteCity function in your database logic
+        await deleteCity(db, id);
       }
       setSelectionMode(false);
       setSelectedCities(new Set());
-      fetchCityDetails(); // Refresh the city list after deletion
+      fetchCityDetails(); // Refresh the city list
     } catch (error) {
       console.error('Error deleting cities:', error);
     }
   };
 
-  const renderCityCard = ({ item }: { item: City }) => {
+  const renderCityCard = ({item}: {item: City}) => {
     const isSelected = selectedCities.has(item.id);
+    const currentTemperature = item.temperature; // Always use the temperature from the database
 
     return (
       <TouchableOpacity
         onLongPress={() => handleLongPress(item.id)}
-        onPress={() => selectionMode && toggleSelection(item.id)}
-        style={[
-          styles.container,
-          isSelected && styles.selectedContainer, // Apply different style if selected
-        ]}
-      >
+        onPress={() => {
+          if (selectionMode) {
+            toggleSelection(item.id);
+          } else {
+            setSelectedCity(item.cityName, item.state, item.country);
+            if (!loading) {
+              navigation.navigate('Home');
+            }
+          }
+        }}
+        style={[styles.container, isSelected && styles.selectedContainer]}>
         <View style={styles.smallContainer}>
           <Text style={styles.textLeft}>{item.cityName}</Text>
           <Image source={require('../assets/gps.png')} style={styles.image} />
-          <Text style={styles.textRight}>31</Text>
+          <Text style={styles.textRight}>{currentTemperature}°</Text>
         </View>
         <View style={styles.smallContainer2}>
           <Text style={styles.textLeft2}>Air Quality : </Text>
-          <Text style={styles.textLeft2}>71</Text>
+          <Text style={styles.textLeft2}>{item.airQuality ?? 'N/A'}</Text>
           <Text style={styles.textLeft2}> - </Text>
           <Text style={styles.textLeft2}>Good</Text>
           <Text style={styles.textRight2}>Partly cloudy</Text>
         </View>
         {isSelected && (
-          <Icon name="checkmark-circle" size={30} color="white" style={styles.selectionIcon} />
+          <Icon
+            name="checkmark-circle"
+            size={30}
+            color="white"
+            style={styles.selectionIcon}
+          />
         )}
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{flex: 1}}>
       {selectionMode && (
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
           <Text style={styles.deleteButtonText}>Delete</Text>
         </TouchableOpacity>
       )}
-      <FlatList
-        data={cityname}
-        renderItem={renderCityCard}
-        keyExtractor={(item) => item.id.toString()}
-      />
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#0000ff"
+          style={styles.loadingIndicator}
+        />
+      ) : (
+        <FlatList
+          data={cityname}
+          renderItem={renderCityCard}
+          keyExtractor={item => item.id.toString()}
+        />
+      )}
     </View>
   );
 };
@@ -113,27 +143,27 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({ cityname, fetchCityDeta
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'blue',
-    margin: width * 0.05, // Use a percentage for margins
-    padding: width * 0.08, // Padding relative to screen width
+    margin: width * 0.05,
+    padding: width * 0.08,
     borderRadius: 10,
     shadowColor: '#171717',
-    shadowOffset: { width: -2, height: 4 },
+    shadowOffset: {width: -2, height: 4},
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 8,
     position: 'relative',
   },
   selectedContainer: {
-    backgroundColor: 'darkblue', // Change background color when selected
+    backgroundColor: 'darkblue',
   },
   textLeft: {
     color: 'white',
-    fontSize: width * 0.05, // Make font size responsive
-    fontFamily: 'Poppins-Bold', // Use a custom font
+    fontSize: width * 0.05,
+    fontFamily: 'Poppins-Bold',
   },
   textLeft2: {
     color: 'white',
-    fontSize: width * 0.035, // Adjust the font size
+    fontSize: width * 0.035,
   },
   textRight: {
     color: 'white',
@@ -144,8 +174,8 @@ const styles = StyleSheet.create({
   textRight2: {
     color: 'white',
     fontSize: width * 0.035,
-    flex: 1, // Flexbox will automatically adjust spacing
-    textAlign: 'right', // Align text to the right
+    flex: 1,
+    textAlign: 'right',
   },
   smallContainer: {
     flexDirection: 'row',
@@ -155,11 +185,11 @@ const styles = StyleSheet.create({
   smallContainer2: {
     flexDirection: 'row',
     marginTop: 20,
-    justifyContent: 'space-between', // Add spacing between text items
+    justifyContent: 'space-between',
   },
   image: {
-    height: width * 0.05, 
-    width: width * 0.05, 
+    height: width * 0.05,
+    width: width * 0.05,
   },
   selectionIcon: {
     position: 'absolute',
@@ -176,6 +206,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  loadingIndicator: {
+    marginTop: 20,
   },
 });
 

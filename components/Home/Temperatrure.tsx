@@ -1,13 +1,21 @@
 import {View, Text, StyleSheet} from 'react-native';
 import React from 'react';
 
-const Temperatrure = () => {
+const Temperatrure = ({
+  min,
+  max,
+  currentTemperature,
+}: {
+  min: number | undefined;
+  max: number | undefined;
+  currentTemperature: number | null;
+}) => {
   return (
     <View style={styles.WeatherContainer}>
-      <Text style={styles.title}>33</Text>
+      <Text style={styles.title}>{currentTemperature}</Text>
 
       <Text style={styles.subtitle}>
-        Sunny 26° / 33° Air Quality: 60 - Satisfactory
+        Sunny {min}° / {max}° Air Quality: 60 - Satisfactory
       </Text>
     </View>
   );

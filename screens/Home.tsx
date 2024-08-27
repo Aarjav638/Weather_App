@@ -3,7 +3,6 @@ import {ImageBackground, ScrollView, StyleSheet, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../components/Home/Header';
 import {NavigationProp} from '@react-navigation/native';
-import {Images} from '../constants/images';
 import PollenStatus from '../components/Home/PollenStatus';
 import Temperatrure from '../components/Home/Temperatrure';
 import FlatListSuggestion from '../components/Home/FlatListSuggestion';
@@ -14,11 +13,13 @@ import {Snackbar, Text} from 'react-native-paper';
 import UnitsDetails from '../components/Home/UnitsDetails';
 import AirQuality from '../components/Home/AirQuality';
 import SunriseSunset from '../components/Home/SunRiseSunset';
-
+import {useLocationWeather} from '../context/getLoactionWeather/getLocationWeather';
+import {Images} from '../constants/images';
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   const isConnected = useConnection();
   const [visible, setVisible] = React.useState(false);
-
+  const {hourlyWeather, dailyWeather, getCurrentTemperature, selectedCity} =
+    useLocationWeather();
   const onDismissSnackBar = () => setVisible(false);
 
   useEffect(() => {
@@ -30,31 +31,81 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
     }
   }, [isConnected]);
 
-  // Example data for SunriseSunset component
-  const sunrise = new Date().setHours(5, 55, 0); // Example sunrise time
-  const sunset = new Date().setHours(18, 50, 0); // Example sunset time
+  const city = selectedCity.city;
+  const sunriseTimeStamp = dailyWeather?.sunrise[0];
+  const sunsetTimeStamp = dailyWeather?.sunset[0];
+  const min = dailyWeather?.temperature_2m_min[0];
+  const max = dailyWeather?.temperature_2m_max[0];
+  const currentTemperature = getCurrentTemperature();
+
+  const SunriseDate = new Date(sunriseTimeStamp ? sunriseTimeStamp : '');
+  const SunSetDate = new Date(sunsetTimeStamp ? sunsetTimeStamp : '');
+
+  const sunriseTime = SunriseDate.setHours(
+    SunriseDate.getHours(),
+    SunriseDate.getMinutes(),
+    0,
+    0,
+  );
+
+  const sunsetTime = SunSetDate.setHours(
+    SunSetDate.getHours(),
+    SunSetDate.getMinutes(),
+    0,
+    0,
+  );
+  const getWeatherIcon = (precipitationProbability: number) => {
+    if (precipitationProbability >= 80) {
+      return Images.stormy; // Very high chance of rain, show stormy weather
+    } else if (precipitationProbability >= 50) {
+      return Images.Rainy; // High chance of rain, show rainy weather
+    } else if (precipitationProbability >= 20) {
+      return Images.cloudyWeather; // Moderate chance, show cloudy weather
+    } else {
+      return Images.sunnyWeather; // Low chance of rain, show sunny weather
+    }
+  };
+
+  // Get the current hour
+  const currentHour = new Date().getHours();
+
+  // Find the index for the current hour
+  const currentHourIndex = hourlyWeather?.time.findIndex(
+    time => new Date(time).getHours() === currentHour,
+  );
+
+  // Get the precipitation probability for the current hour
+  const precipitationProbability =
+    currentHourIndex !== -1
+      ? hourlyWeather?.precipitation_probability[currentHourIndex]
+      : 0;
+
+  // Get the background image based on the precipitation probability
+  const backgroundImage = getWeatherIcon(precipitationProbability);
 
   return (
     <SafeAreaView style={styles.container}>
       <ImageBackground
         style={styles.Image}
         blurRadius={10}
-        source={Images.sunnyWeather}
+        source={backgroundImage}
       />
-      <Header navigation={navigation} city="Kairana" />
+      <Header navigation={navigation} city={city} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollView}>
-        <Temperatrure />
+        <Temperatrure
+          currentTemperature={currentTemperature}
+          min={min}
+          max={max}
+        />
         <PollenStatus />
         <FlatListSuggestion />
         <HorizontalWeatherDetails />
         <SevenDaysForecast />
-
         <AirQuality value={70} />
         <UnitsDetails />
-
-        <SunriseSunset sunrise={sunrise} sunset={sunset} />
+        <SunriseSunset sunrise={sunriseTime} sunset={sunsetTime} />
       </ScrollView>
       <View style={styles.snackbarContainer}>
         <Snackbar
@@ -76,7 +127,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-
   Image: {
     ...StyleSheet.absoluteFillObject,
   },

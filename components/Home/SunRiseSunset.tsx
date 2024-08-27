@@ -17,19 +17,27 @@ const SunriseSunset: React.FC<SunriseSunsetProps> = ({sunrise, sunset}) => {
       duration: 1000,
       useNativeDriver: false,
     }).start();
-  }, []);
+  }, [animation]);
+
+  if (!sunrise || !sunset || isNaN(sunrise) || isNaN(sunset)) {
+    console.error('Invalid sunrise or sunset values');
+    return null; // or render a fallback UI
+  }
 
   const totalTime = sunset - sunrise;
   const timeElapsed = currentTime - sunrise;
-  const timePercentage =
-    Math.min(Math.max(timeElapsed / totalTime, 0), 1) * 100;
+  const timePercentage = totalTime > 0 ? (timeElapsed / totalTime) * 100 : 0;
+
   const animatedLeftPosition = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0%', `${timePercentage}%`],
+    outputRange: ['0%', `${Math.min(Math.max(timePercentage, 0), 100)}%`],
   });
 
   const isDaytime = currentTime >= sunrise && currentTime <= sunset;
   const iconName = isDaytime ? 'sunny' : 'moon';
+  console.log('Total Time:', totalTime);
+  console.log('Time Elapsed:', timeElapsed);
+  console.log('Time Percentage:', timePercentage);
 
   return (
     <View style={styles.container}>
@@ -54,12 +62,16 @@ const SunriseSunset: React.FC<SunriseSunsetProps> = ({sunrise, sunset}) => {
       </View>
       <View style={styles.row}>
         <Text style={styles.timeText}>
-          {new Date(sunrise).toLocaleTimeString().slice(0, 4)}
-          {' AM '}
+          {new Date(sunrise).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
         </Text>
         <Text style={styles.timeText}>
-          {new Date(sunset).toLocaleTimeString().slice(0, 4)}
-          {' PM '}
+          {new Date(sunset).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
         </Text>
       </View>
     </View>

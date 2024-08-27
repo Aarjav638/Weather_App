@@ -5,7 +5,7 @@ import Splash from './screens/Splash';
 
 const App = () => {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
-  const fadeAnim = useState(new Animated.Value(1))[0]; // Single state instance
+  const fadeAnim = useState(new Animated.Value(1))[0];
 
   useEffect(() => {
     const timer = setTimeout(() => {
