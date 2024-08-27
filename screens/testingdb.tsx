@@ -8,7 +8,7 @@ import { addCityname } from '../android/app/db/Insertcityname';
 import { CityDetails } from '../android/app/db/typing';
 
 const Testingdb = () => {
-    const [cityDetails, setCityDetails] = useState<(CityDetails & { cityName: string })[]>([]);
+    const [cityDetails, setCityDetails] = useState<(CityDetails & { city: string })[]>([]);
 
     const loadData = useCallback(async () => {
         try {
@@ -16,7 +16,7 @@ const Testingdb = () => {
             await createTables(db);
 
             // Insert dummy data into City
-            const cityId = await addCityname(db, { cityName: 'London' });
+            const cityId = await addCityname(db, { cityName: 'London', state:'up' , country:'india' });
 
             // Insert dummy data into cityDetails with the correct cityId
             await addCityDetails(db, {
@@ -28,8 +28,8 @@ const Testingdb = () => {
             });
 
             // Fetch the data from the cityDetails table with city names
-            const cityData = await getCityDetailsWithCityNames(db);
-            setCityDetails(cityData); 
+            // const cityData = await getCityDetailsWithCityNames(db);
+            // setCityDetails(cityData); 
         } catch (error) {
             console.error('Database error:', error);
         }

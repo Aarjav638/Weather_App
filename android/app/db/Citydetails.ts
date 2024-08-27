@@ -5,7 +5,9 @@ export const createTables = async (db: SQLiteDatabase) => {
     const city = `
       CREATE TABLE IF NOT EXISTS City (
          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          cityName TEXT NOT NULL
+         cityName TEXT NOT NULL,
+         state TEXT,
+         country TEXT
       )
     `;
     const cityDetails = `
@@ -20,8 +22,9 @@ export const createTables = async (db: SQLiteDatabase) => {
     )
    `;
     try {
-        await db.executeSql(city);
+       const result = await db.executeSql(city);
         await db.executeSql(cityDetails);
+        console.log(result);
     } catch (error) {
         console.error(error);
         throw Error('Failed to create tables');
