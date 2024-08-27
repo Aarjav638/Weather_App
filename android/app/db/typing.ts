@@ -10,6 +10,8 @@ export type CityDetails = {
 
 export type City = {
     cityName: string;
+    state:string;
+    country:string;
     id?: number; // Optional, auto-generated primary key if needed
 };
 

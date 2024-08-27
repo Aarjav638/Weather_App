@@ -2,17 +2,16 @@ import { SQLiteDatabase } from 'react-native-sqlite-storage';
 import { City } from './typing';
 
 export const addCityname = async (db: SQLiteDatabase, city: City): Promise<number> => {
-    const insertQuery = 'INSERT INTO City (cityName) VALUES (?)';
-    try {
-        const result = await db.executeSql(insertQuery, [city.cityName]);
-        // Return the auto-generated cityId
-        return result[0].insertId;
-    } catch (error) {
-        console.error(error);
-        throw new Error('Failed to add city');
-    }
+  const insertQuery = 'INSERT INTO City (cityName, state, country) VALUES (?, ?, ?)';
+  try {
+      const result = await db.executeSql(insertQuery, [city.cityName, city.state, city.country]);
+      console.log('SQL Insert Result:', result);  // Log the result to check if the insert works
+      return result[0].insertId;  // Return the auto-generated cityId
+  } catch (error) {
+      console.error('Failed to add city:', error);  // Log any error
+      throw new Error('Failed to add city');
+  }
 };
-
   export const getCityName = async (db: SQLiteDatabase): Promise<City[]> => {
     try {
       const cityname: City[] = [];
@@ -27,6 +26,15 @@ export const addCityname = async (db: SQLiteDatabase, city: City): Promise<numbe
       console.error(error);
       throw Error('Failed to get name from database');
     }
+  };
+
+  export const deleteCity = async (db: SQLiteDatabase, id:number) => {
+    try {
+      await db.executeSql('DELETE FROM City WHERE id = ?', [id]);
+    } catch (error) {
+      console.error('Error deleting city:', error);
+      throw error;
+    }
   };
 
   // Here is another version if you need to retrieve only one user preference.
