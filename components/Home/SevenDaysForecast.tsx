@@ -1,72 +1,37 @@
-import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
 import React from 'react';
+import {useLocationWeather} from '../../context/getLoactionWeather/getLocationWeather';
 import {Images} from '../../constants/images';
 
-const DATA = [
-  {
-    id: '1',
-    date: '26 Aug Today',
-    image: Images.cloudy2,
-    temperature: '31',
-    today: 'Today',
-  },
-  {
-    id: '2',
-    date: '26 Aug Tomorrow',
-    image: Images.cloudy2,
-    temperature: '35',
-    tomorrow: 'Tomorrow',
-  },
-  {
-    id: '3',
-    date: '26 Aug Wed',
-    image: Images.cloudy2,
-    temperature: '31',
-    wed: 'Wed',
-  },
-  {
-    id: '4',
-    date: '26 Aug Thu',
-    image: Images.cloudy2,
-    temperature: '31',
-    thu: 'Thu',
-  },
-  {
-    id: '5',
-    date: '26 Aug Fri',
-    image: Images.cloudy2,
-    temperature: '31',
-    fri: 'Fri',
-  },
-  {
-    id: '6',
-    date: '26 Aug Sat',
-    image: Images.cloudy2,
-    temperature: '26',
-    sat: 'Sat',
-  },
-
-  {
-    id: '7',
-    date: '26 Aug Sun',
-    image: Images.cloudy2,
-    temperature: '31',
-    sun: 'Sun',
-  },
-];
-
 const SevenDaysForecast = () => {
+  const {forecastData} = useLocationWeather();
+  const getWeatherIcon = (temprature: number) => {
+    if (temprature > 30) {
+      return Images.sunny;
+    }
+    if (temprature > 20) {
+      return Images.cloudy;
+    }
+    if (temprature > 10) {
+      return Images.rainy_icon;
+    }
+    return Images.stormy_icon;
+  };
+
   return (
     <View style={styles.container}>
-      {DATA.map((data, index) => {
+      {forecastData?.map((data, index) => {
         return (
           <View key={index} style={styles.internalcontainer}>
-            <Text style={styles.datetext}>{data.date}</Text>
+            <Text style={styles.datetext}>{data.time}</Text>
 
-            <Image source={data.image} style={styles.image} />
+            <Image
+              source={getWeatherIcon(Number(data.temprature_2m.toPrecision(2)))}
+              style={styles.image}
+            />
 
             <Text style={styles.text}>
-              {data.temperature}/{data.temperature}
+              {data.temprature_2m.toPrecision(2)}° C
             </Text>
           </View>
         );

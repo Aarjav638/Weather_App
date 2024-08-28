@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {View, StyleSheet, Animated} from 'react-native';
 import Navigator from './components/Navigator';
 import Splash from './screens/Splash';
-import { LogLevel, OneSignal } from 'react-native-onesignal';
+import {LogLevel, OneSignal} from 'react-native-onesignal';
 
 const App = () => {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
@@ -33,7 +33,7 @@ const App = () => {
   OneSignal.Notifications.requestPermission(true);
 
   // Method for listening for notification clicks
-  OneSignal.Notifications.addEventListener('click', (event) => {
+  OneSignal.Notifications.addEventListener('click', event => {
     console.log('OneSignal: notification clicked:', event);
   });
 

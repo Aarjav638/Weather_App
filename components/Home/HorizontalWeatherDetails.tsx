@@ -13,16 +13,18 @@ import {useLocationWeather} from '../../context/getLoactionWeather/getLocationWe
 type ItemProps = {
   time: string;
   image: ImageSourcePropType | undefined;
-  temperature: string;
+  temperature: number; // Change the type to number
 };
 
 const getWeatherIcon = (precipitationProbability: number) => {
-  if (precipitationProbability > 50) {
-    return Images.cloudy3;
+  if (precipitationProbability > 70) {
+    return Images.stormy_icon;
+  } else if (precipitationProbability > 50) {
+    return Images.rainy_icon;
   } else if (precipitationProbability > 20) {
     return Images.cloudy;
   } else {
-    return Images.cloudy2;
+    return Images.sunny;
   }
 };
 
@@ -37,25 +39,17 @@ const Item = ({time, image, temperature}: ItemProps) => (
 const HorizontalWeatherDetails = () => {
   const {hourlyWeather} = useLocationWeather();
 
-  const formattedData = hourlyWeather?.time.map((t: string, index: number) => ({
-    id: index.toString(),
-    time: new Date(t).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
-    image: getWeatherIcon(hourlyWeather?.precipitation_probability[index]),
-    temperature: hourlyWeather?.temperature_2m[index].toString(),
-  }));
+  const formattedData = hourlyWeather?.map((item, index) => {
+    return {
+      id: index.toString(),
+      time: item.time.slice(11, 16),
+      image: getWeatherIcon(item.precipitation_probability),
+      temperature: item.temperature, // Convert the number to a string
+    };
+  });
 
   return (
-    <View
-      style={{
-        backgroundColor: 'rgba(0,0,0,0.1)',
-        maxHeight: 100,
-        minHeight: 100,
-        flex: 0.2,
-        borderRadius: 10,
-      }}>
+    <View style={styles.Flatlist}>
       <FlatList
         data={formattedData}
         horizontal
@@ -73,6 +67,13 @@ const HorizontalWeatherDetails = () => {
 };
 
 const styles = StyleSheet.create({
+  Flatlist: {
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    maxHeight: 100,
+    minHeight: 100,
+    flex: 0.2,
+    borderRadius: 10,
+  },
   image: {
     height: 18,
     width: 18,

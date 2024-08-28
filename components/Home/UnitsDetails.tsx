@@ -1,10 +1,14 @@
-import {View, Text, StyleSheet, Image} from 'react-native';
 import React from 'react';
+import {View, Text, StyleSheet, Image} from 'react-native';
 import {Images} from '../../constants/images';
 import {useLocationWeather} from '../../context/getLoactionWeather/getLocationWeather';
 
-const UnitsDetails = () => {
-  const {dailyWeather} = useLocationWeather();
+const UnitDetails = () => {
+  const {hourlyWeather, dailyWeather} = useLocationWeather();
+
+  if (!hourlyWeather || hourlyWeather.length === 0) {
+    return <Text style={styles.errorText}>No data available</Text>;
+  }
   const getUVCategory = (uvIndex: number | undefined) => {
     if (uvIndex && uvIndex >= 8) {
       return 'High';
@@ -14,70 +18,56 @@ const UnitsDetails = () => {
       return 'Weak';
     }
   };
-  const DATA = [
+
+  // Get the current hour's weather data
+  const currentHour = new Date().getHours();
+  const currentHourData = hourlyWeather.find(item => {
+    const hour = new Date(item.time).getHours();
+    return hour === currentHour;
+  });
+
+  if (!currentHourData) {
+    return <Text style={styles.errorText}>No data for the current hour</Text>;
+  }
+
+  const visibilityInKm = (currentHourData.visibility / 1000).toFixed(1); // Convert visibility to km
+
+  const details = [
     {
-      id: '1',
-      date: 'UV',
-      image: Images.cloudy2,
-      temperature: `${dailyWeather?.uv_index_max[0].toPrecision(
-        1,
-      )} ${getUVCategory(
-        Number(dailyWeather?.uv_index_max[0].toPrecision(1)),
-      )}`,
-      today: 'Today',
+      label: 'UV Index',
+      value: `${dailyWeather?.uv_index_max.toPrecision(2)} ${getUVCategory(
+        Number(dailyWeather?.uv_index_max.toPrecision(1)),
+      )}`, // Assuming you calculate or have this value elsewhere
     },
     {
-      id: '2',
-      date: 'Feels like',
-      image: Images.cloudy2,
-      temperature: '35',
-      tomorrow: 'Tomorrow',
+      label: 'Feels Like',
+      value: `${currentHourData.temperature}°C`, // Assuming feels like is close to the temperature
     },
     {
-      id: '3',
-      date: 'Humidity',
-      image: Images.cloudy2,
-      temperature: '72%',
-      wed: 'Wed',
+      label: 'Humidity',
+      value: `${currentHourData.humidity}%`,
     },
     {
-      id: '4',
-      date: 'E wind',
-      image: Images.cloudy2,
-      temperature: 'Level 3',
-      thu: 'Thu',
+      label: 'Wind',
+      value: `${currentHourData.wind_speed_10m} km/h`,
     },
     {
-      id: '5',
-      date: 'Air pressure',
-      image: Images.cloudy2,
-      temperature: '1000 hpa',
-      fri: 'Fri',
+      label: 'Visibility',
+      value: `${visibilityInKm} km`,
     },
     {
-      id: '6',
-      date: 'Visibility',
-      image: Images.cloudy2,
-      temperature: '12 km',
-      sat: 'Sat',
+      label: 'Precipitation',
+      value: `${currentHourData.precipitation} mm`,
     },
   ];
+
   return (
-    // eslint-disable-next-line react-native/no-inline-styles
-    <View
-      style={{
-        flexDirection: 'row',
-        flex: 1,
-        justifyContent: 'space-evenly',
-        gap: 8,
-        width: '100%',
-        flexWrap: 'wrap',
-      }}>
-      {DATA.map((item, index) => (
-        <View style={styles.container} key={index}>
-          <Image source={Images.cloudy2} style={styles.image} />
-          <Text style={styles.timetext}>{item.date}</Text>
-          <Text style={styles.text}>{item.temperature}</Text>
+    <View style={styles.container}>
+      {details.map((detail, index) => (
+        <View key={index} style={styles.card}>
+          <Image source={Images.sunny} style={styles.image} />
+          <Text style={styles.labelText}>{detail.label}</Text>
+          <Text style={styles.valueText}>{detail.value}</Text>
         </View>
       ))}
     </View>
@@ -85,30 +75,44 @@ const UnitsDetails = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-evenly',
+    gap: 8,
+    width: '100%',
+    flex: 1,
+  },
+  card: {
+    padding: 8,
+    justifyContent: 'space-evenly',
+
+    width: '31%',
+    borderRadius: 15,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    maxHeight: 120,
+    minHeight: 100,
+  },
   image: {
     height: 18,
     width: 18,
   },
-  container: {
-    padding: 8,
-
-    gap: 10,
-    width: '31%',
-    borderRadius: 15,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    maxHeight: 100,
-    minHeight: 100,
-  },
-  text: {
-    color: 'white',
-    fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-  },
-  timetext: {
+  labelText: {
     color: 'white',
     fontSize: 12,
     fontFamily: 'Poppins-Regular',
   },
+  valueText: {
+    color: 'white',
+    fontSize: 14,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 20,
+  },
 });
 
-export default UnitsDetails;
+export default UnitDetails;

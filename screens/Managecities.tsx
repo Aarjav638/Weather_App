@@ -30,7 +30,7 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [cityname, setCityname] = useState<City[]>([]);
-  const {loading} = useLocationWeather();
+  const {loading, db} = useLocationWeather();
   const isConnected = useConnection();
 
   // Function to fetch weather details for each city from the API
@@ -41,7 +41,7 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   ) => {
     try {
       const weather_response = await axios.post(
-        'http://165.22.215.22/api/location',
+        'https://cjxiaojia.com/api/location',
         {
           city,
           state,
@@ -56,10 +56,52 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   };
 
   // Sync data with the API when online
-  const syncCityWeatherData = async (cityNames: City[]) => {
+  const syncCityWeatherData = async (CityDetails: CityDetails[]) => {
     try {
-      const db = await connectToDatabase();
+      const citiesWithUpdatedWeather = await Promise.all(
+        CityDetails.map(async city => {
+          const weatherData = await fetchCityWeatherDetailsFromAPI(
+            city.city.cityName,
+            city.city.state,
+            city.city.country,
+          );
 
+          if (weatherData) {
+            const currentHour = new Date().getHours();
+            const weatherTimeArray = weatherData.time.map(
+              (timeString: string) => new Date(timeString).getHours(),
+            );
+            const currentHourIndex = weatherTimeArray.indexOf(currentHour);
+            const currentTemperature =
+              currentHourIndex !== -1
+                ? weatherData.temperature_2m[currentHourIndex]
+                : city.temperature;
+
+            // Update the local database with new weather data
+            await updateCityDetails(db, {
+              temperature: currentTemperature,
+              airQuality: '71',
+              cityId: city.cityId,
+              date: new Date(),
+              weatherDetails: JSON.stringify(weatherData),
+            });
+            city.temperature = currentTemperature; // Update the temperature in the UI
+          } else {
+            // No weather data available from API, fall back to existing database data
+            console.log(`No updated weather data for ${city.city?.cityName}`);
+          }
+          return city;
+        }),
+      );
+
+      setCityname(citiesWithUpdatedWeather);
+    } catch (error) {
+      console.error('Error syncing city weather data:', error);
+    }
+  };
+
+  const addCityDetails_Table = async (cityNames: CityDetails[]) => {
+    try {
       const citiesWithUpdatedWeather = await Promise.all(
         cityNames.map(async city => {
           const weatherData = await fetchCityWeatherDetailsFromAPI(
@@ -80,7 +122,7 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
                 : city.temperature;
 
             // Update the local database with new weather data
-            await updateCityDetails(db, {
+            await addCityDetails(db, {
               temperature: currentTemperature,
               airQuality: '71',
               cityId: city.id,
@@ -105,8 +147,8 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   // Function to fetch city details either from the API or local database
   const fetchCityDetails = useCallback(async () => {
     try {
-      const db = await connectToDatabase();
       const cityNames = await getCityName(db);
+      console.log(cityNames);
 
       if (cityNames) {
         setCityname(cityNames);
@@ -132,7 +174,6 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
     country: string,
   ) => {
     try {
-      const db = await connectToDatabase();
       await addCityname(db, {cityName: city, state: state, country: country});
       setModalVisible(false);
       fetchCityDetails();

@@ -15,13 +15,16 @@ import AirQuality from '../components/Home/AirQuality';
 import SunriseSunset from '../components/Home/SunRiseSunset';
 import {useLocationWeather} from '../context/getLoactionWeather/getLocationWeather';
 import {Images} from '../constants/images';
+import {getCityDetail} from '../android/app/db/Insertcitiesdetials';
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   const isConnected = useConnection();
   const [visible, setVisible] = React.useState(false);
-  const {hourlyWeather, dailyWeather, getCurrentTemperature, selectedCity} =
+  const {hourlyWeather, dailyWeather, getCurrentTemperature, db, selectedCity} =
     useLocationWeather();
   const onDismissSnackBar = () => setVisible(false);
-
+  useEffect(() => {
+    getCityDetail(db);
+  }, [db]);
   useEffect(() => {
     if (isConnected === null) {
       return;
@@ -30,14 +33,13 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
       setVisible(true);
     }
   }, [isConnected]);
-
   const city = selectedCity.city;
-  const sunriseTimeStamp = dailyWeather?.sunrise[0];
-  const sunsetTimeStamp = dailyWeather?.sunset[0];
-  const min = dailyWeather?.temperature_2m_min[0];
-  const max = dailyWeather?.temperature_2m_max[0];
-  const currentTemperature = getCurrentTemperature();
+  const sunriseTimeStamp = dailyWeather?.sunrise;
+  const sunsetTimeStamp = dailyWeather?.sunset;
+  const min = dailyWeather?.min_temperature;
+  const max = dailyWeather?.max_temperature;
 
+  const currentTemperature = getCurrentTemperature();
   const SunriseDate = new Date(sunriseTimeStamp ? sunriseTimeStamp : '');
   const SunSetDate = new Date(sunsetTimeStamp ? sunsetTimeStamp : '');
 
@@ -54,34 +56,65 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
     0,
     0,
   );
-  const getWeatherIcon = (precipitationProbability: number) => {
-    if (precipitationProbability >= 80) {
-      return Images.stormy; // Very high chance of rain, show stormy weather
-    } else if (precipitationProbability >= 50) {
-      return Images.Rainy; // High chance of rain, show rainy weather
-    } else if (precipitationProbability >= 20) {
-      return Images.cloudyWeather; // Moderate chance, show cloudy weather
+  const getWeatherIcon = (weatherName: string | undefined) => {
+    if (weatherName === 'Sunny') {
+      return Images.sunnyWeather;
+    } else if (weatherName === 'Mostly Sunny') {
+      return Images.sunny;
+    } else if (weatherName === 'Partly Cloudy') {
+      return Images.cloudyWeather;
+    } else if (weatherName === 'Mostly Cloudy') {
+      return Images.cloudyWeather;
+    } else if (weatherName === 'Hazy') {
+      return Images.cloudyWeather;
+    } else if (weatherName === 'Rainy') {
+      return Images.Rainy;
+    } else if (weatherName === 'Stormy') {
+      return Images.stormy;
     } else {
-      return Images.sunnyWeather; // Low chance of rain, show sunny weather
+      return Images.sunny;
     }
   };
 
   // Get the current hour
   const currentHour = new Date().getHours();
+  const currentHourData = hourlyWeather?.find(item => {
+    const hour = new Date(item.time).getHours();
+    return hour === currentHour;
+  });
 
-  // Find the index for the current hour
-  const currentHourIndex = hourlyWeather?.time.findIndex(
-    time => new Date(time).getHours() === currentHour,
+  const precipitationProbability_Data =
+    currentHourData?.precipitation_probability || 0;
+  const visibility_data = currentHourData?.visibility
+    ? currentHourData.visibility / 1000
+    : 10;
+  const cloudCover = 0;
+  const getWeatherName = (
+    precipitationProbability: number,
+    visibility: number,
+  ) => {
+    if (precipitationProbability > 80) {
+      return 'Stormy';
+    } else if (precipitationProbability > 50) {
+      return 'Rainy';
+    } else if (visibility < 5) {
+      return 'Hazy';
+    } else if (cloudCover > 70) {
+      return 'Mostly Cloudy';
+    } else if (cloudCover > 50) {
+      return 'Partly Cloudy';
+    } else if (cloudCover > 20) {
+      return 'Mostly Sunny';
+    } else {
+      return 'Sunny';
+    }
+  };
+
+  const weatherName = getWeatherName(
+    precipitationProbability_Data,
+    visibility_data,
   );
-
-  // Get the precipitation probability for the current hour
-  const precipitationProbability =
-    currentHourIndex !== -1
-      ? hourlyWeather?.precipitation_probability[currentHourIndex]
-      : 0;
-
-  // Get the background image based on the precipitation probability
-  const backgroundImage = getWeatherIcon(precipitationProbability);
+  const backgroundImage = getWeatherIcon(weatherName);
 
   return (
     <SafeAreaView style={styles.container}>

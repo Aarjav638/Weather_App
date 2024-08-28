@@ -4,6 +4,7 @@ export type CityDetails = {
   airQuality: string;
   cityId: number | undefined; // Foreign key to City
   date: Date;
+  city?: City;
   weatherDetails: string | null;
   id?: number; // Optional, auto-generated primary key
 };

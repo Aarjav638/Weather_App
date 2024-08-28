@@ -6,11 +6,12 @@ type ImageInterface = {
   cloudyWeather?: ImageSourcePropType;
   sunnyWeather?: ImageSourcePropType;
   sunnyWeather1?: ImageSourcePropType;
-  cloudy2?: ImageSourcePropType;
   cloudy?: ImageSourcePropType;
-  cloudy3?: ImageSourcePropType;
   Rainy?: ImageSourcePropType;
   stormy?: ImageSourcePropType;
+  rainy_icon?: ImageSourcePropType;
+  stormy_icon?: ImageSourcePropType;
+  sunny?: ImageSourcePropType;
 };
 
 type OnBoardingImageInterface = {
@@ -25,8 +26,9 @@ export const Images: ImageInterface = {
   cloudyWeather: require('../assets/cloudyWeather.jpg'),
   sunnyWeather: require('../assets/sunny.jpg'),
   sunnyWeather1: require('../assets/sunny1.jpg'),
-  cloudy2: require('../assets/cloudy2.png'),
-  cloudy3: require('../assets/cloudy3.png'),
+  sunny: require('../assets/cloudy2.png'),
+  rainy_icon: require('../assets/cloudy1.png'),
+  stormy_icon: require('../assets/cloudy3.png'),
   Rainy: require('../assets/RainyWeather.jpg'),
   stormy: require('../assets/stormy.jpg'),
 };
