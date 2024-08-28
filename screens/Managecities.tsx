@@ -45,6 +45,9 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   const [cityDetails, setCityDetails] = useState<CityDetails[]>([]);
   const {loading, db} = useLocationWeather();
   const isConnected = useConnection();
+  const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
+
+  const TTL = 30000; // 30 seconds
 
   const fetchCityWeatherDetailsFromAPI = async (
     city: string,
@@ -181,6 +184,32 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
     }
   };
 
+  const syncCityWeatherDetails = async () => {
+    const cities = await fetchCityDetails();
+    try {
+      for (const city of cities) {
+        const cityInfo = JSON.parse(city.city);
+        const weatherData = await fetchCityWeatherDetailsFromAPI(
+          cityInfo.cityName,
+          cityInfo.state,
+          cityInfo.country,
+        );
+        if (weatherData) {
+          const currentTemperature = getCurrentTemperature(weatherData);
+          const updatedCityDetails: CityDetails = {
+            ...city,
+            temperature: currentTemperature?.toString() ?? '0',
+            weatherDetails: JSON.stringify(weatherData),
+            date: new Date(),
+          };
+          await updateCity(updatedCityDetails);
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing city weather details:', error);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchCityDetails();
@@ -191,6 +220,7 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
     const handleConnectivityChange = () => {
       if (isConnected) {
         syncDeletedCities();
+        syncCityWeatherDetails();
       }
     };
 
@@ -202,6 +232,19 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
       unsubscribe();
     };
   }, [isConnected]);
+
+  // Sync every 30 seconds if connected to the internet
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const currentTime = Date.now();
+      if (isConnected && currentTime - lastSyncTime >= TTL) {
+        syncCityWeatherDetails();
+        setLastSyncTime(currentTime);
+      }
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isConnected, lastSyncTime]);
 
   return (
     <View style={{flex: 1}}>
