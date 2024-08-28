@@ -7,13 +7,14 @@ export const addCityDetails = async (
 ) => {
   try {
     const result = await db?.executeSql(
-      `INSERT INTO cityDetails (cityId, temperature, airQuality, date, weatherDetails) 
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO cityDetails (cityId, temperature, airQuality, date, city, weatherDetails, deleted) 
+       VALUES (?, ?, ?, ?, ?, ?, 0)`, // Set deleted to 0 by default
       [
         cityDetails.cityId,
         cityDetails.temperature,
         cityDetails.airQuality,
         cityDetails.date.toISOString(),
+        cityDetails.city,
         cityDetails.weatherDetails,
       ],
     );
@@ -29,7 +30,9 @@ export const getCityDetail = async (
   try {
     console.log('Fetching city details');
     const city: CityDetails[] = [];
-    const results = await db?.executeSql('SELECT * FROM cityDetails');
+    const results = await db?.executeSql(
+      'SELECT * FROM cityDetails WHERE deleted = 0',
+    ); // Exclude deleted cities
     results?.forEach(result => {
       for (let index = 0; index < result.rows.length; index++) {
         city.push(result.rows.item(index));
@@ -73,5 +76,51 @@ export const updateCityDetails = async (
   } catch (error) {
     console.error('Failed to update city details:', error);
     throw error;
+  }
+};
+
+export const markCityAsDeleted = async (
+  db: SQLiteDatabase | null,
+  id: number,
+) => {
+  try {
+    await db?.executeSql('UPDATE cityDetails SET deleted = 1 WHERE id = ?', [
+      id,
+    ]);
+  } catch (error) {
+    console.error('Error marking city as deleted:', error);
+    throw error;
+  }
+};
+
+export const deleteCityFromDB = async (
+  db: SQLiteDatabase | null,
+  id: number,
+) => {
+  try {
+    await db?.executeSql('DELETE FROM cityDetails WHERE id = ?', [id]);
+  } catch (error) {
+    console.error('Error deleting city from DB:', error);
+    throw error;
+  }
+};
+
+export const getDeletedCities = async (
+  db: SQLiteDatabase | null,
+): Promise<CityDetails[]> => {
+  try {
+    const deletedCities: CityDetails[] = [];
+    const results = await db?.executeSql(
+      'SELECT * FROM cityDetails WHERE deleted = 1',
+    );
+    results?.forEach(result => {
+      for (let index = 0; index < result.rows.length; index++) {
+        deletedCities.push(result.rows.item(index));
+      }
+    });
+    return deletedCities;
+  } catch (error) {
+    console.error('Error fetching deleted cities:', error);
+    throw Error('Failed to get deleted cities from database');
   }
 };

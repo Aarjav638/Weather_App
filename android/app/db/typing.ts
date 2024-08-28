@@ -1,17 +1,17 @@
-export type Table = 'City' | 'cityDetails';
 export type CityDetails = {
   temperature: string;
   airQuality: string;
-  cityId: number | undefined; // Foreign key to City
+  cityId: number | undefined;
   date: Date;
-  city?: City;
+  city: string | null;
   weatherDetails: string | null;
-  id?: number; // Optional, auto-generated primary key
+  deleted?: number;
+  id?: number;
 };
 
 export type City = {
   cityName: string;
   state: string;
   country: string;
-  id?: number; // Optional, auto-generated primary key if needed
+  id?: number;
 };

@@ -3,10 +3,14 @@ import {View, StyleSheet, Animated} from 'react-native';
 import Navigator from './components/Navigator';
 import Splash from './screens/Splash';
 import {LogLevel, OneSignal} from 'react-native-onesignal';
+import {getCityDetail} from './android/app/db/Insertcitiesdetials';
+import {connectToDatabase} from './android/app/db/db';
+import {CityDetails} from './android/app/db/typing';
 
 const App = () => {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const fadeAnim = useState(new Animated.Value(1))[0];
+  const [cityDetails, setCityDetails] = useState<CityDetails[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -22,6 +26,17 @@ const App = () => {
     return () => clearTimeout(timer);
   }, [fadeAnim]);
 
+  const getCityDetails = async () => {
+    const db = await connectToDatabase();
+    const cityDetails = await getCityDetail(db);
+    setCityDetails(cityDetails);
+  };
+
+  useEffect(() => {
+    getCityDetails();
+  }, []);
+
+  console.log('cityDetails', cityDetails);
   // Remove this method to stop OneSignal Debugging
   OneSignal.Debug.setLogLevel(LogLevel.Verbose);
 

@@ -20,10 +20,12 @@ export const addCityname = async (
     throw new Error('Failed to add city');
   }
 };
-export const getCityName = async (db: SQLiteDatabase): Promise<City[]> => {
+export const getCityName = async (
+  db: SQLiteDatabase | null,
+): Promise<City[]> => {
   try {
     const cityname: City[] = [];
-    const results = await db.executeSql('SELECT * FROM City');
+    const results = await db?.executeSql('SELECT * FROM City');
     results?.forEach(result => {
       for (let index = 0; index < result.rows.length; index++) {
         cityname.push(result.rows.item(index));
@@ -36,9 +38,9 @@ export const getCityName = async (db: SQLiteDatabase): Promise<City[]> => {
   }
 };
 
-export const deleteCity = async (db: SQLiteDatabase, id: number) => {
+export const deleteCity = async (db: SQLiteDatabase | null, id: number) => {
   try {
-    await db.executeSql('DELETE FROM City WHERE id = ?', [id]);
+    await db?.executeSql('DELETE FROM City WHERE id = ?', [id]);
   } catch (error) {
     console.error('Error deleting city:', error);
     throw error;

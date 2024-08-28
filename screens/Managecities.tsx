@@ -12,28 +12,40 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Modal from 'react-native-modal';
 import {Searchbar} from 'react-native-paper';
 import axios from 'axios';
-import {addCityname, getCityName} from '../android/app/db/Insertcityname';
+import {addCityname} from '../android/app/db/Insertcityname';
 import {
   addCityDetails,
   getCityDetail,
   updateCityDetails,
+  getDeletedCities,
+  deleteCityFromDB,
 } from '../android/app/db/Insertcitiesdetials';
-import {connectToDatabase} from '../android/app/db/db';
-import {City, CityDetails} from '../android/app/db/typing';
+import {CityDetails} from '../android/app/db/typing';
 import {NavigationProp, useFocusEffect} from '@react-navigation/native';
 import {useLocationWeather} from '../context/getLoactionWeather/getLocationWeather';
 import useConnection from '../hooks/useConnection';
+import NetInfo from '@react-native-community/netinfo';
+
+interface HourlyWeather {
+  time: string;
+  temperature: number;
+  humidity: number;
+  precipitation_probability: number;
+  precipitation: number;
+  visibility: number;
+  wind_speed_10m: number;
+  wind_speed_80m: number;
+}
 
 const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   const [response, setResponse] = useState<Record<string, string>[]>();
   const [isModalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
-  const [cityname, setCityname] = useState<City[]>([]);
+  const [cityDetails, setCityDetails] = useState<CityDetails[]>([]);
   const {loading, db} = useLocationWeather();
   const isConnected = useConnection();
 
-  // Function to fetch weather details for each city from the API
   const fetchCityWeatherDetailsFromAPI = async (
     city: string,
     state: string,
@@ -48,142 +60,86 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
           country,
         },
       );
-      return weather_response.data.hourly;
+      return weather_response.data[0].hourly;
     } catch (error) {
       console.error('Error fetching weather details from API:', error);
       return null;
     }
   };
 
-  // Sync data with the API when online
-  const syncCityWeatherData = async (CityDetails: CityDetails[]) => {
-    try {
-      const citiesWithUpdatedWeather = await Promise.all(
-        CityDetails.map(async city => {
-          const weatherData = await fetchCityWeatherDetailsFromAPI(
-            city.city.cityName,
-            city.city.state,
-            city.city.country,
-          );
+  const fetchCityDetails = async () => {
+    const details = await getCityDetail(db);
+    setCityDetails(details);
+    return details;
+  };
 
-          if (weatherData) {
-            const currentHour = new Date().getHours();
-            const weatherTimeArray = weatherData.time.map(
-              (timeString: string) => new Date(timeString).getHours(),
-            );
-            const currentHourIndex = weatherTimeArray.indexOf(currentHour);
-            const currentTemperature =
-              currentHourIndex !== -1
-                ? weatherData.temperature_2m[currentHourIndex]
-                : city.temperature;
+  const updateCity = async (cityDetailsProps: CityDetails) => {
+    await updateCityDetails(db, cityDetailsProps);
+  };
 
-            // Update the local database with new weather data
-            await updateCityDetails(db, {
-              temperature: currentTemperature,
-              airQuality: '71',
-              cityId: city.cityId,
-              date: new Date(),
-              weatherDetails: JSON.stringify(weatherData),
-            });
-            city.temperature = currentTemperature; // Update the temperature in the UI
-          } else {
-            // No weather data available from API, fall back to existing database data
-            console.log(`No updated weather data for ${city.city?.cityName}`);
-          }
-          return city;
-        }),
-      );
+  const addCity = async (cityDetailsProps: CityDetails) => {
+    await addCityDetails(db, cityDetailsProps);
+  };
 
-      setCityname(citiesWithUpdatedWeather);
-    } catch (error) {
-      console.error('Error syncing city weather data:', error);
+  const getCurrentTemperature = (weatherData: HourlyWeather[]) => {
+    const currentHour = new Date().getHours();
+    const currentHourData = weatherData.find(entry => {
+      const entryHour = new Date(entry.time).getHours();
+      return entryHour === currentHour;
+    });
+    if (currentHourData) {
+      return currentHourData.temperature;
+    } else {
+      return null;
     }
   };
 
-  const addCityDetails_Table = async (cityNames: CityDetails[]) => {
-    try {
-      const citiesWithUpdatedWeather = await Promise.all(
-        cityNames.map(async city => {
-          const weatherData = await fetchCityWeatherDetailsFromAPI(
-            city.cityName,
-            city.state,
-            city.country,
-          );
-
-          if (weatherData) {
-            const currentHour = new Date().getHours();
-            const weatherTimeArray = weatherData.time.map(
-              (timeString: string) => new Date(timeString).getHours(),
-            );
-            const currentHourIndex = weatherTimeArray.indexOf(currentHour);
-            const currentTemperature =
-              currentHourIndex !== -1
-                ? weatherData.temperature_2m[currentHourIndex]
-                : city.temperature;
-
-            // Update the local database with new weather data
-            await addCityDetails(db, {
-              temperature: currentTemperature,
-              airQuality: '71',
-              cityId: city.id,
-              date: new Date(),
-              weatherDetails: JSON.stringify(weatherData),
-            });
-            city.temperature = currentTemperature; // Update the temperature in the UI
-          } else {
-            // No weather data available from API, fall back to existing database data
-            console.log(`No updated weather data for ${city.cityName}`);
-          }
-          return city;
-        }),
-      );
-
-      setCityname(citiesWithUpdatedWeather);
-    } catch (error) {
-      console.error('Error syncing city weather data:', error);
-    }
-  };
-
-  // Function to fetch city details either from the API or local database
-  const fetchCityDetails = useCallback(async () => {
-    try {
-      const cityNames = await getCityName(db);
-      console.log(cityNames);
-
-      if (cityNames) {
-        setCityname(cityNames);
-        if (isConnected) {
-          await syncCityWeatherData(cityNames); // Sync and update data when online
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching city details:', error);
-    }
-  }, [isConnected]);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchCityDetails();
-    }, [fetchCityDetails]),
-  );
-
-  // Function to handle the selection of a city from the search results
   const handleCitySelection = async (
     city: string,
     state: string,
     country: string,
   ) => {
-    try {
-      await addCityname(db, {cityName: city, state: state, country: country});
-      setModalVisible(false);
-      fetchCityDetails();
-    } catch (err) {
-      console.error('Error inserting city:', err);
+    const cityId = await addCityname(db, {
+      cityName: city,
+      state,
+      country,
+    });
+    const weatherData = await fetchCityWeatherDetailsFromAPI(
+      city,
+      state,
+      country,
+    );
+    if (weatherData) {
+      const currentTemperature = getCurrentTemperature(weatherData);
+      const cityNameDetails = {
+        cityName: city,
+        state,
+        country,
+      };
+      const cityDetails1: CityDetails = {
+        cityId,
+        temperature: currentTemperature?.toString() ?? '0',
+        airQuality: '71',
+        date: new Date(),
+        city: JSON.stringify(cityNameDetails),
+        weatherDetails: JSON.stringify(weatherData),
+      };
+      console.log('City details: are adding up ');
+      console.log(cityDetails1);
+
+      await addCity(cityDetails1);
+
+      setCityDetails(prevDetails => [...prevDetails, cityDetails1]);
+      await addCityname(db, {
+        cityName: city,
+        state,
+        country,
+      });
+
       setModalVisible(false);
     }
   };
 
-  // Debounce the search query input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -214,16 +170,52 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
     setModalVisible(!isModalVisible);
   };
 
+  const syncDeletedCities = async () => {
+    const deletedCities = await getDeletedCities(db);
+    try {
+      for (const city of deletedCities) {
+        await deleteCityFromDB(db, city.id!);
+      }
+    } catch (error) {
+      console.error('Error syncing deleted cities:', error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchCityDetails();
+    }, []),
+  );
+
+  useEffect(() => {
+    const handleConnectivityChange = () => {
+      if (isConnected) {
+        syncDeletedCities();
+      }
+    };
+
+    const unsubscribe = NetInfo.addEventListener(() => {
+      handleConnectivityChange();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isConnected]);
+
   return (
     <View style={{flex: 1}}>
       <CitiesCardView
         navigation={navigation}
-        cityname={cityname}
+        cityDetails={cityDetails}
         loading={loading}
         fetchCityDetails={fetchCityDetails}
       />
 
-      <TouchableOpacity style={styles.actionButtonIcon} onPress={toggleModal}>
+      <TouchableOpacity
+        style={styles.actionButtonIcon}
+        onPress={toggleModal}
+        disabled={!isConnected}>
         <Icon name="add-outline" style={styles.icon} />
       </TouchableOpacity>
 

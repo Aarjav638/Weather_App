@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -10,25 +10,16 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {connectToDatabase} from '../android/app/db/db';
-import {deleteCity, getCityName} from '../android/app/db/Insertcityname';
+import {markCityAsDeleted} from '../android/app/db/Insertcitiesdetials';
 import {useLocationWeather} from '../context/getLoactionWeather/getLocationWeather';
 import {NavigationProp} from '@react-navigation/native';
-
-interface City {
-  id: number;
-  cityName: string;
-  state: string;
-  country: string;
-  temperature: number;
-  airQuality?: string;
-}
+import {CityDetails} from '../android/app/db/typing';
 
 interface CitiesCardViewProps {
   navigation: NavigationProp<any>;
-  cityname: City[];
+  cityDetails: CityDetails[];
   loading: boolean;
-  fetchCityDetails: () => void;
+  fetchCityDetails: () => Promise<CityDetails[]>;
 }
 
 const {width} = Dimensions.get('window');
@@ -36,12 +27,13 @@ const {width} = Dimensions.get('window');
 const CitiesCardView: React.FC<CitiesCardViewProps> = ({
   navigation,
   loading,
-  cityname,
+  cityDetails,
   fetchCityDetails,
 }) => {
   const [selectedCities, setSelectedCities] = useState<Set<number>>(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
-  const {setSelectedCity} = useLocationWeather();
+  const {setSelectedCity, db} = useLocationWeather();
+  const [CityDetails, setCityDetails] = useState<CityDetails[]>(cityDetails);
 
   const handleLongPress = (id: number) => {
     setSelectionMode(true);
@@ -62,30 +54,36 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({
 
   const handleDelete = async () => {
     try {
-      const db = await connectToDatabase();
       for (const id of selectedCities) {
-        await deleteCity(db, id);
+        await markCityAsDeleted(db, id);
       }
       setSelectionMode(false);
       setSelectedCities(new Set());
-      fetchCityDetails(); // Refresh the city list
+      setCityDetails(await fetchCityDetails());
     } catch (error) {
-      console.error('Error deleting cities:', error);
+      console.error('Error marking cities as deleted:', error);
     }
   };
 
-  const renderCityCard = ({item}: {item: City}) => {
-    const isSelected = selectedCities.has(item.id);
-    const currentTemperature = item.temperature; // Always use the temperature from the database
+  const renderCityCard = ({item}: {item: CityDetails}) => {
+    const isSelected = selectedCities.has(item.id || 0);
+    const currentTemperature = parseFloat(item.temperature) || 'N/A';
+    const cityDetails = item.city ? JSON.parse(item.city) : null;
 
     return (
       <TouchableOpacity
-        onLongPress={() => handleLongPress(item.id)}
+        onLongPress={() => item.id !== undefined && handleLongPress(item.id)}
         onPress={() => {
           if (selectionMode) {
-            toggleSelection(item.id);
+            if (item.id !== undefined) {
+              toggleSelection(item.id);
+            }
           } else {
-            setSelectedCity(item.cityName, item.state, item.country);
+            setSelectedCity(
+              cityDetails.cityName,
+              cityDetails.state,
+              cityDetails.country,
+            );
             if (!loading) {
               navigation.navigate('Home');
             }
@@ -93,7 +91,9 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({
         }}
         style={[styles.container, isSelected && styles.selectedContainer]}>
         <View style={styles.smallContainer}>
-          <Text style={styles.textLeft}>{item.cityName}</Text>
+          <Text style={styles.textLeft}>
+            {cityDetails.cityName ? cityDetails.cityName : 'Unknown'}
+          </Text>
           <Image source={require('../assets/gps.png')} style={styles.image} />
           <Text style={styles.textRight}>{currentTemperature}°</Text>
         </View>
@@ -131,9 +131,9 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({
         />
       ) : (
         <FlatList
-          data={cityname}
+          data={cityDetails}
           renderItem={renderCityCard}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={item => item.id?.toString() ?? item.cityId.toString()}
         />
       )}
     </View>
