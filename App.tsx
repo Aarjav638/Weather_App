@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {View, StyleSheet, Animated} from 'react-native';
 import Navigator from './components/Navigator';
 import Splash from './screens/Splash';
+import { LogLevel, OneSignal } from 'react-native-onesignal';
 
 const App = () => {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
@@ -20,6 +21,21 @@ const App = () => {
 
     return () => clearTimeout(timer);
   }, [fadeAnim]);
+
+  // Remove this method to stop OneSignal Debugging
+  OneSignal.Debug.setLogLevel(LogLevel.Verbose);
+
+  // OneSignal Initialization
+  OneSignal.initialize('c9e276c0-7418-42fe-a011-4f842ebe21ef');
+
+  // requestPermission will show the native iOS or Android notification permission prompt.
+  // We recommend removing the following code and instead using an In-App Message to prompt for notification permission
+  OneSignal.Notifications.requestPermission(true);
+
+  // Method for listening for notification clicks
+  OneSignal.Notifications.addEventListener('click', (event) => {
+    console.log('OneSignal: notification clicked:', event);
+  });
 
   return (
     <View style={styles.container}>
