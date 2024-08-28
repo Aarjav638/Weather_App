@@ -1,6 +1,11 @@
 import React, {createContext, useState, useEffect, useContext} from 'react';
 import axios from 'axios';
 import {SQLiteDatabase} from 'react-native-sqlite-storage';
+import {
+  addCityDetails,
+  getCityDetail,
+} from '../../android/app/db/Insertcitiesdetials';
+import {addCityname} from '../../android/app/db/Insertcityname';
 import {connectToDatabase} from '../../android/app/db/db';
 import {createTables} from '../../android/app/db/Citydetails';
 
@@ -23,6 +28,7 @@ interface DailyWeather {
   sunset: string;
   uv_index_max: number;
 }
+
 interface ForecastData {
   time: string;
   temprature_2m: number;
@@ -75,11 +81,8 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
   }, []);
 
   useEffect(() => {
-    console.log(selectedCity.city, selectedCity.country, selectedCity.state);
     if (selectedCity.city && selectedCity.state && selectedCity.country) {
-      console.log('fetching');
-      fetchWeather(selectedCity.city, selectedCity.state, selectedCity.country);
-      fetchForeCast(
+      fetchWeatherData(
         selectedCity.city,
         selectedCity.state,
         selectedCity.country,
@@ -87,8 +90,58 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
     }
   }, [selectedCity]);
 
-  const fetchWeather = async (city: string, state: string, country: string) => {
+  const fetchWeatherData = async (
+    city: string,
+    state: string,
+    country: string,
+  ) => {
     setLoading(true);
+    try {
+      const cityDetails = await getCityDetail(db);
+
+      if (cityDetails && cityDetails.length > 0) {
+        const cityDetail = cityDetails.find(detail => {
+          const cityInfo = detail.city ? JSON.parse(detail.city) : null;
+          return (
+            cityInfo.cityName === city &&
+            cityInfo.state === state &&
+            cityInfo.country === country
+          );
+        });
+
+        if (cityDetail) {
+          const weatherDetails = cityDetail.weatherDetails
+            ? JSON.parse(cityDetail.weatherDetails)
+            : null;
+          setHourlyWeather(weatherDetails);
+          // Update daily weather if you have such data stored
+          setDailyWeather(weatherDetails.daily || null);
+          setError(null);
+          console.log('Data loaded from the database');
+        } else {
+          // Fetch from the API if not found
+          await fetchWeatherFromAPI(city, state, country);
+        }
+      } else {
+        // Fetch from the API if no data is found in the database
+        await fetchWeatherFromAPI(city, state, country);
+      }
+
+      // Always fetch forecast data from the API
+      await fetchForecastData(city, state, country);
+    } catch (err) {
+      console.error('Failed to load weather data:', err);
+      setError('Failed to load weather data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWeatherFromAPI = async (
+    city: string,
+    state: string,
+    country: string,
+  ) => {
     try {
       const response = await axios.post('https://cjxiaojia.com/api/location', {
         city,
@@ -101,22 +154,34 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
       if (weatherData && weatherData.hourly && weatherData.daily) {
         setHourlyWeather(weatherData.hourly);
         setDailyWeather(weatherData.daily);
+
+        // Save the fetched data to the database
+        const cityId = await addCityname(db, {cityName: city, state, country});
+        await addCityDetails(db, {
+          cityId,
+          temperature: weatherData.hourly[0].temperature.toString(),
+          airQuality: 'N/A', // Assuming you handle air quality separately
+          date: new Date(),
+          city: JSON.stringify({city, state, country}),
+          weatherDetails: JSON.stringify({
+            hourly: weatherData.hourly,
+            daily: weatherData.daily,
+          }),
+        });
         setError(null);
       } else {
         setError('Unexpected response structure');
       }
     } catch (err) {
-      setError('Failed to fetch weather data');
-    } finally {
-      setLoading(false);
+      setError('Failed to fetch weather data from API');
     }
   };
-  const fetchForeCast = async (
+
+  const fetchForecastData = async (
     city: string,
     state: string,
     country: string,
   ) => {
-    setLoading(true);
     try {
       const response = await axios.post('https://cjxiaojia.com/api/forecast', {
         city,
@@ -124,18 +189,16 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
         country,
       });
 
-      const weatherData = response.data[0];
+      const forecastData = response.data[0];
 
-      if (weatherData && weatherData.daily) {
-        setDailyForeCast(weatherData.daily);
+      if (forecastData && forecastData.daily) {
+        setDailyForeCast(forecastData.daily);
         setError(null);
       } else {
         setError('Unexpected response structure');
       }
     } catch (err) {
-      setError('Failed to fetch weather data');
-    } finally {
-      setLoading(false);
+      setError('Failed to fetch forecast data');
     }
   };
 

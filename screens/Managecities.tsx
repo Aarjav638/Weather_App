@@ -6,6 +6,7 @@ import {
   Text,
   Dimensions,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import CitiesCardView from '../components/Citiescardview';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -46,6 +47,7 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   const {loading, db} = useLocationWeather();
   const isConnected = useConnection();
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
+  const [isLoading, setIsLoading] = useState(false);
 
   const TTL = 30000; // 30 seconds
 
@@ -102,44 +104,46 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
     state: string,
     country: string,
   ) => {
-    const cityId = await addCityname(db, {
-      cityName: city,
-      state,
-      country,
-    });
-    const weatherData = await fetchCityWeatherDetailsFromAPI(
-      city,
-      state,
-      country,
-    );
-    if (weatherData) {
-      const currentTemperature = getCurrentTemperature(weatherData);
-      const cityNameDetails = {
-        cityName: city,
-        state,
-        country,
-      };
-      const cityDetails1: CityDetails = {
-        cityId,
-        temperature: currentTemperature?.toString() ?? '0',
-        airQuality: '71',
-        date: new Date(),
-        city: JSON.stringify(cityNameDetails),
-        weatherDetails: JSON.stringify(weatherData),
-      };
-      console.log('City details: are adding up ');
-      console.log(cityDetails1);
+    setIsLoading(true); // Start loading
 
-      await addCity(cityDetails1);
-
-      setCityDetails(prevDetails => [...prevDetails, cityDetails1]);
-      await addCityname(db, {
+    try {
+      const cityId = await addCityname(db, {
         cityName: city,
         state,
         country,
       });
+      const weatherData = await fetchCityWeatherDetailsFromAPI(
+        city,
+        state,
+        country,
+      );
+
+      if (weatherData) {
+        const currentTemperature = getCurrentTemperature(weatherData);
+        const cityNameDetails = {
+          cityName: city,
+          state,
+          country,
+        };
+        const cityDetails1: CityDetails = {
+          cityId,
+          temperature: currentTemperature?.toString() ?? '0',
+          airQuality: '71',
+          date: new Date(),
+          city: JSON.stringify(cityNameDetails),
+          weatherDetails: JSON.stringify(weatherData),
+        };
+
+        await addCity(cityDetails1);
+
+        setCityDetails(prevDetails => [...prevDetails, cityDetails1]);
+      }
 
       setModalVisible(false);
+    } catch (error) {
+      console.error('Error selecting city:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -284,23 +288,31 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
             />
           </View>
           <View style={styles.flatview}>
-            <FlatList
-              data={response}
-              renderItem={({item}) =>
-                item.city ? (
-                  <View>
-                    <Text
-                      onPress={() =>
-                        handleCitySelection(item.city, item.state, item.country)
-                      }
-                      style={styles.cityText}>
-                      {item.city} , {item.state} , {item.country}
-                    </Text>
-                  </View>
-                ) : null
-              }
-              keyExtractor={(item, index) => index.toString()}
-            />
+            {isLoading ? (
+              <ActivityIndicator size="large" color="blue" />
+            ) : (
+              <FlatList
+                data={response}
+                renderItem={({item}) =>
+                  item.city ? (
+                    <View>
+                      <Text
+                        onPress={() =>
+                          handleCitySelection(
+                            item.city,
+                            item.state,
+                            item.country,
+                          )
+                        }
+                        style={styles.cityText}>
+                        {item.city} , {item.state} , {item.country}
+                      </Text>
+                    </View>
+                  ) : null
+                }
+                keyExtractor={(item, index) => index.toString()}
+              />
+            )}
           </View>
         </View>
       </Modal>
