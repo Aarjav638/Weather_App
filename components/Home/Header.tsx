@@ -19,7 +19,7 @@ const Header = ({
       <View style={styles.iconView}>
         <View style={styles.notification}>
           <Icon
-            onPress={() => console.log('Notifications')}
+            onPress={() => navigation.navigate('Notification')}
             name="notifications"
             size={25}
             color="white"

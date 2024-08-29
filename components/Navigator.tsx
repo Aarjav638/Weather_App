@@ -8,6 +8,7 @@ import ManageCities from '../screens/Managecities';
 import Settings from '../screens/Settings';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {LocationWeatherProvider} from '../context/getLoactionWeather/getLocationWeather';
+import Notifications from '../screens/Notifiaction';
 
 const Navigator = () => {
   const [tempId, setTempId] = React.useState<string | null>(null);
@@ -93,6 +94,15 @@ const Navigator = () => {
                 backgroundColor: 'skyblue',
               },
               headerTintColor: 'white',
+            }}
+          />
+          <Stack.Screen
+            name="Notification"
+            component={Notifications}
+            options={{
+              animation: 'slide_from_right',
+              headerShadowVisible: false,
+              headerShown: true,
             }}
           />
         </Stack.Navigator>
