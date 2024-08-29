@@ -10,7 +10,7 @@ export type CityDetails = {
 };
 
 export type City = {
-  cityName: string;
+  city: string;
   state: string;
   country: string;
   id?: number;

@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {View, Text, Animated, StyleSheet} from 'react-native';
 
 type AirQualityProps = {
@@ -6,14 +6,19 @@ type AirQualityProps = {
 };
 
 const AirQuality: React.FC<AirQualityProps> = ({value}) => {
-  const animation = new Animated.Value(0);
+  const animation = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
+  const startAnimation = () => {
+    animation.setValue(0); // Reset the animation value to 0
     Animated.timing(animation, {
       toValue: value,
       duration: 1000,
       useNativeDriver: false,
     }).start();
+  };
+
+  useEffect(() => {
+    startAnimation(); // Start the animation when the component is mounted or value changes
   }, [value]);
 
   const animatedWidth = animation.interpolate({
@@ -27,8 +32,7 @@ const AirQuality: React.FC<AirQualityProps> = ({value}) => {
       <View style={styles.seperator} />
       <Text style={styles.AirQualityText}>Satisfactory {value}</Text>
       <Text style={styles.subtitle}>
-        {' '}
-        Air Quality is acceptable. However, unusually sensitive{' '}
+        Air Quality is acceptable. However, unusually sensitive
       </Text>
       <View style={styles.barBackground}>
         <Animated.View
@@ -78,9 +82,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'Poppins-Regular',
     marginBottom: 10,
-    flexWrap: 'nowrap',
   },
-
   barBackground: {
     height: 10,
     backgroundColor: '#ddd',

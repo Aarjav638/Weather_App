@@ -1,10 +1,8 @@
-
-import { createTables } from '../android/app/db/Citydetails';
-import { useCallback, useEffect } from 'react';
-import { connectToDatabase } from '../android/app/db/db';
+import {createTables} from '../db/Citydetails';
+import {useCallback, useEffect} from 'react';
+import {connectToDatabase} from '../db/db';
 
 const Citiesdb = () => {
-
   const loadData = useCallback(async () => {
     try {
       const db = await connectToDatabase();
@@ -17,8 +15,6 @@ const Citiesdb = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
 };
 
 export default Citiesdb;
-
