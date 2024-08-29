@@ -31,18 +31,18 @@ const getBackgroundColor = (
   precipitationProbability: number | null,
 ): string => {
   if (temperature === null || precipitationProbability === null) {
-    return 'gray'; // default color when data is missing
+    return 'gray';
   }
   if (precipitationProbability > 80) {
-    return 'darkblue'; // High chance of rain
+    return 'darkblue';
   } else if (temperature > 30) {
-    return 'red'; // Hot temperature
+    return 'red';
   } else if (temperature > 20) {
-    return 'orange'; // Warm temperature
+    return 'orange';
   } else if (temperature > 10) {
-    return 'yellow'; // Mild temperature
+    return 'grey';
   } else {
-    return 'lightblue'; // Cold temperature
+    return 'lightblue';
   }
 };
 
@@ -173,6 +173,7 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({
               <Image
                 source={require('../assets/gps.png')}
                 style={styles.image}
+                tintColor={'white'}
               />
               <Text style={styles.textRight}>{currentTemperature}°</Text>
             </View>
