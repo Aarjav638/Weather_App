@@ -52,9 +52,10 @@ const styles = StyleSheet.create({
   },
   HeaderText: {
     fontSize: 20,
-    letterSpacing: 1,
     fontFamily: 'Poppins-Bold',
     color: 'white',
+    width: '60%',
+    letterSpacing: 1,
   },
   iconView: {
     flexDirection: 'row',

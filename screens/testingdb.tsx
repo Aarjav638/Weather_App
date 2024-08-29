@@ -1,11 +1,11 @@
 import React, {useEffect, useState, useCallback} from 'react';
 import {View, Text} from 'react-native';
-import {connectToDatabase} from '../android/app/db/db';
-import {createTables} from '../android/app/db/Citydetails';
-import {addCityDetails} from '../android/app/db/Insertcitiesdetials';
-import {getCityDetailsWithCityNames} from '../android/app/db/getCityDetailsWithCityID';
-import {addCityname} from '../android/app/db/Insertcityname';
-import {CityDetails} from '../android/app/db/typing';
+import {connectToDatabase} from '../db/db';
+import {createTables} from '../db/Citydetails';
+import {addCityDetails} from '../db/Insertcitiesdetials';
+import {getCityDetailsWithCityNames} from '../db/getCityDetailsWithCityID';
+import {addCityname} from '../db/Insertcityname';
+import {CityDetails} from '../db/typing';
 
 const Testingdb = () => {
   const [cityDetails, setCityDetails] = useState<

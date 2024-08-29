@@ -1,24 +1,33 @@
 import {SQLiteDatabase} from 'react-native-sqlite-storage';
 import {CityDetails} from './typing';
-
 export const addCityDetails = async (
   db: SQLiteDatabase | null,
   cityDetails: CityDetails,
 ) => {
+  const insertQuery = `
+    INSERT INTO cityDetails (cityId, temperature, airQuality, date, city, weatherDetails, deleted) 
+    VALUES (?, ?, ?, ?, ?, ?, 0)
+  `;
+
   try {
-    const result = await db?.executeSql(
-      `INSERT INTO cityDetails (cityId, temperature, airQuality, date, city, weatherDetails, deleted) 
-       VALUES (?, ?, ?, ?, ?, ?, 0)`, // Set deleted to 0 by default
-      [
-        cityDetails.cityId,
-        cityDetails.temperature,
-        cityDetails.airQuality,
-        cityDetails.date.toISOString(),
-        cityDetails.city,
-        cityDetails.weatherDetails,
-      ],
-    );
-    console.log('City details inserted:', result);
+    if (!db) {
+      throw new Error('Database connection is not available');
+    }
+
+    const result = await db.executeSql(insertQuery, [
+      cityDetails.cityId,
+      cityDetails.temperature,
+      cityDetails.airQuality,
+      cityDetails.date.toISOString(),
+      cityDetails.city,
+      cityDetails.weatherDetails,
+    ]);
+
+    if (result[0].rowsAffected > 0) {
+      console.log('City details inserted successfully:', result);
+    } else {
+      console.error('City details insertion failed:', result);
+    }
   } catch (error) {
     console.error('Error inserting city details:', error);
   }
@@ -28,7 +37,6 @@ export const getCityDetail = async (
   db: SQLiteDatabase | null,
 ): Promise<CityDetails[]> => {
   try {
-    console.log('Fetching city details');
     const city: CityDetails[] = [];
     const results = await db?.executeSql(
       'SELECT * FROM cityDetails WHERE deleted = 0',

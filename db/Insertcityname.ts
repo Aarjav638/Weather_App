@@ -1,6 +1,5 @@
 import {SQLiteDatabase} from 'react-native-sqlite-storage';
 import {City} from './typing';
-
 export const addCityname = async (
   db: SQLiteDatabase | null,
   city: City,
@@ -8,18 +7,30 @@ export const addCityname = async (
   const insertQuery =
     'INSERT INTO City (cityName, state, country) VALUES (?, ?, ?)';
   try {
-    const result = await db?.executeSql(insertQuery, [
-      city.cityName,
+    if (!db) {
+      throw new Error('Database connection is not available');
+    }
+
+    const result = await db.executeSql(insertQuery, [
+      city.city,
       city.state,
       city.country,
     ]);
-    console.log('SQL Insert Result:', result); // Log the result to check if the insert works
-    return result ? result[0].insertId : 0; // Return the auto-generated cityId
+
+    console.log('SQL Insert Result:', result);
+
+    if (result[0].rowsAffected > 0) {
+      return result[0].insertId || 0; // Return the ID of the newly inserted row
+    } else {
+      console.error('City insertion failed:', result);
+      return 0; // Insertion failed, return 0 or appropriate failure value
+    }
   } catch (error) {
     console.error('Failed to add city:', error); // Log any error
-    throw new Error('Failed to add city');
+    return 0; // Return 0 in case of error
   }
 };
+
 export const getCityName = async (
   db: SQLiteDatabase | null,
 ): Promise<City[]> => {

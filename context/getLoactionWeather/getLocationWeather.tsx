@@ -4,46 +4,28 @@ import {SQLiteDatabase} from 'react-native-sqlite-storage';
 import {
   addCityDetails,
   getCityDetail,
-} from '../../android/app/db/Insertcitiesdetials';
-import {addCityname} from '../../android/app/db/Insertcityname';
-import {connectToDatabase} from '../../android/app/db/db';
-import {createTables} from '../../android/app/db/Citydetails';
-
-interface HourlyWeather {
-  time: string;
-  temperature: number;
-  humidity: number;
-  precipitation_probability: number;
-  precipitation: number;
-  visibility: number;
-  wind_speed_10m: number;
-  wind_speed_80m: number;
-}
-
-interface DailyWeather {
-  date: string;
-  max_temperature: number;
-  min_temperature: number;
-  sunrise: string;
-  sunset: string;
-  uv_index_max: number;
-}
-
-interface ForecastData {
-  time: string;
-  temprature_2m: number;
-}
+  updateCityDetails,
+} from '../../db/Insertcitiesdetials';
+import {addCityname, getCityName} from '../../db/Insertcityname';
+import {createTables} from '../../db/Citydetails';
+import {
+  ForecastData,
+  DailyWeather,
+  HourlyWeather,
+  location,
+} from '../../constants/types';
+import {useDatabase} from '../../hooks/useDataBase'; // Custom hook to manage DB connection
 
 interface LocationWeatherContextType {
-  selectedCity: {city: string; state: string; country: string};
+  selectedCity: location;
   setSelectedCity: (city: string, state: string, country: string) => void;
   hourlyWeather: HourlyWeather[] | null;
   dailyWeather: DailyWeather | null;
   loading: boolean;
   error: string | null;
   db: SQLiteDatabase | null;
+  syncCityWeatherDetails: () => void;
   getCurrentTemperature: () => number | null;
-  setLocation: (city: string, state: string, country: string) => void;
   forecastData: ForecastData[] | null;
 }
 
@@ -54,6 +36,7 @@ const LocationWeatherContext = createContext<
 export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
   children,
 }) => {
+  const {db, loading: dbLoading, error: dbError} = useDatabase();
   const [selectedCity, setSelectedCity] = useState<{
     city: string;
     state: string;
@@ -67,18 +50,68 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
   const [hourlyWeather, setHourlyWeather] = useState<HourlyWeather[] | null>(
     null,
   );
-
   const [dailyWeather, setDailyWeather] = useState<DailyWeather | null>(null);
   const [dailyForeCast, setDailyForeCast] = useState<ForecastData[] | null>(
     null,
   );
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [db, setDb] = useState<SQLiteDatabase | null>(null);
 
   useEffect(() => {
-    addTables();
-  }, []);
+    if (dbLoading) {
+      return;
+    } // Wait until the database is fully loaded
+
+    if (dbError) {
+      console.error('Database error:', dbError);
+      setError('Database connection failed');
+      return;
+    }
+
+    const initializeCity = async () => {
+      if (!db) {
+        console.error('Database connection is not available');
+        return;
+      }
+
+      try {
+        // Create tables if they don't exist
+        await createTables(db);
+
+        // Check if the initial city exists in the database
+        const cityDetails = await getCityDetail(db);
+        const cityExists = cityDetails.some(detail => {
+          const cityInfo = detail.city ? JSON.parse(detail.city) : null;
+          return (
+            cityInfo.city === selectedCity.city &&
+            cityInfo.state === selectedCity.state &&
+            cityInfo.country === selectedCity.country
+          );
+        });
+
+        if (!cityExists) {
+          console.log('Initial city not found in DB, fetching from API');
+          await fetchWeatherFromAPI(
+            selectedCity.city,
+            selectedCity.state,
+            selectedCity.country,
+          );
+        } else {
+          console.log('Initial city already exists in DB');
+          await fetchWeatherData(
+            selectedCity.city,
+            selectedCity.state,
+            selectedCity.country,
+          );
+        }
+      } catch (catchError) {
+        console.error('Failed to initialize city:', catchError);
+        setError('Failed to initialize city data');
+      }
+    };
+
+    initializeCity();
+  }, [db, dbLoading, dbError]);
 
   useEffect(() => {
     if (selectedCity.city && selectedCity.state && selectedCity.country) {
@@ -95,15 +128,20 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
     state: string,
     country: string,
   ) => {
+    if (!db) {
+      console.error('Database connection is not available');
+      return;
+    }
+
     setLoading(true);
     try {
       const cityDetails = await getCityDetail(db);
-
       if (cityDetails && cityDetails.length > 0) {
         const cityDetail = cityDetails.find(detail => {
           const cityInfo = detail.city ? JSON.parse(detail.city) : null;
+          console.log('cityInfo:', cityInfo);
           return (
-            cityInfo.cityName === city &&
+            cityInfo.city === city &&
             cityInfo.state === state &&
             cityInfo.country === country
           );
@@ -113,21 +151,18 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
           const weatherDetails = cityDetail.weatherDetails
             ? JSON.parse(cityDetail.weatherDetails)
             : null;
-          setHourlyWeather(weatherDetails);
-          // Update daily weather if you have such data stored
+          setHourlyWeather(weatherDetails.hourly || null);
           setDailyWeather(weatherDetails.daily || null);
           setError(null);
           console.log('Data loaded from the database');
         } else {
-          // Fetch from the API if not found
           await fetchWeatherFromAPI(city, state, country);
         }
       } else {
-        // Fetch from the API if no data is found in the database
         await fetchWeatherFromAPI(city, state, country);
       }
 
-      // Always fetch forecast data from the API
+      // Always fetch forecast data regardless of where the weather data is sourced from
       await fetchForecastData(city, state, country);
     } catch (err) {
       console.error('Failed to load weather data:', err);
@@ -142,6 +177,11 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
     state: string,
     country: string,
   ) => {
+    if (!db) {
+      console.error('Database connection is not available');
+      return;
+    }
+
     try {
       const response = await axios.post('https://cjxiaojia.com/api/location', {
         city,
@@ -155,24 +195,54 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
         setHourlyWeather(weatherData.hourly);
         setDailyWeather(weatherData.daily);
 
-        // Save the fetched data to the database
-        const cityId = await addCityname(db, {cityName: city, state, country});
-        await addCityDetails(db, {
-          cityId,
-          temperature: weatherData.hourly[0].temperature.toString(),
-          airQuality: 'N/A', // Assuming you handle air quality separately
-          date: new Date(),
-          city: JSON.stringify({city, state, country}),
-          weatherDetails: JSON.stringify({
-            hourly: weatherData.hourly,
-            daily: weatherData.daily,
-          }),
-        });
+        // Check if city already exists in the database
+        const existingCities = await getCityName(db);
+        const existingCity = existingCities.find(
+          existingCity1 =>
+            existingCity1.city === city &&
+            existingCity1.state === state &&
+            existingCity1.country === country,
+        );
+
+        if (existingCity) {
+          console.log('City already exists, updating details...');
+          await updateCityDetails(db, {
+            cityId: existingCity.id,
+            temperature: weatherData.hourly[0].temperature.toString(),
+            airQuality: 'N/A',
+            date: new Date(),
+            city: JSON.stringify({city, state, country}),
+            weatherDetails: JSON.stringify({
+              hourly: weatherData.hourly,
+              daily: weatherData.daily,
+            }),
+          });
+        } else {
+          console.log('City does not exist, adding new entry...');
+          const cityId = await addCityname(db, {
+            city: city,
+            state,
+            country,
+          });
+          console.log('cityId:', cityId);
+          await addCityDetails(db, {
+            cityId,
+            temperature: weatherData.hourly[0].temperature.toString(),
+            airQuality: 'N/A',
+            date: new Date(),
+            city: JSON.stringify({city, state, country}),
+            weatherDetails: JSON.stringify({
+              hourly: weatherData.hourly,
+              daily: weatherData.daily,
+            }),
+          });
+        }
         setError(null);
       } else {
         setError('Unexpected response structure');
       }
     } catch (err) {
+      console.error('Failed to fetch weather data from API:', err);
       setError('Failed to fetch weather data from API');
     }
   };
@@ -190,7 +260,6 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
       });
 
       const forecastData = response.data[0];
-
       if (forecastData && forecastData.daily) {
         setDailyForeCast(forecastData.daily);
         setError(null);
@@ -202,19 +271,50 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
     }
   };
 
-  const addTables = async () => {
+  const syncCityWeatherDetails = async () => {
+    if (!db) {
+      console.error('Database connection is not available');
+      return;
+    }
+
     try {
-      const dbb = await connectToDatabase();
-      if (dbb) {
-        console.log('Database connected');
-        setDb(dbb);
-        await createTables(dbb);
-        console.log('Tables created');
+      const cityDetails = await getCityDetail(db);
+      if (cityDetails && cityDetails.length > 0) {
+        const cityDetail = cityDetails.find(detail => {
+          const cityInfo = detail.city ? JSON.parse(detail.city) : null;
+          return (
+            cityInfo.cityName === selectedCity.city &&
+            cityInfo.state === selectedCity.state &&
+            cityInfo.country === selectedCity.country
+          );
+        });
+
+        if (cityDetail) {
+          const weatherDetails = cityDetail.weatherDetails
+            ? JSON.parse(cityDetail.weatherDetails).hourly
+            : null;
+          setHourlyWeather(weatherDetails);
+        }
       }
+
+      // Always sync forecast data
+      await fetchForecastData(
+        selectedCity.city,
+        selectedCity.state,
+        selectedCity.country,
+      );
     } catch (catchError) {
-      console.error('Error connecting to database:', catchError);
+      console.error('Failed to sync city weather details:', catchError);
     }
   };
+
+  // Sync cityWeather and forecast data every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncCityWeatherDetails();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getCurrentTemperature = (): number | null => {
     if (!hourlyWeather || hourlyWeather.length === 0) {
@@ -222,17 +322,11 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
     }
 
     const currentHour = new Date().getHours();
-
     const currentHourData = hourlyWeather.find(hourData => {
       const weatherHour = new Date(hourData.time).getHours();
       return weatherHour === currentHour;
     });
-
     return currentHourData ? currentHourData.temperature : null;
-  };
-
-  const setLocation = (city: string, state: string, country: string) => {
-    setSelectedCity({city, state, country});
   };
 
   return (
@@ -244,9 +338,9 @@ export const LocationWeatherProvider: React.FC<{children: React.ReactNode}> = ({
         hourlyWeather,
         dailyWeather,
         loading,
+        syncCityWeatherDetails,
         db,
         error,
-        setLocation,
         forecastData: dailyForeCast,
         getCurrentTemperature,
       }}>

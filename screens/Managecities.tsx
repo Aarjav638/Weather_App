@@ -11,122 +11,91 @@ import {
 import CitiesCardView from '../components/Citiescardview';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Modal from 'react-native-modal';
-import {Searchbar} from 'react-native-paper';
+import {Searchbar, Snackbar} from 'react-native-paper';
 import axios from 'axios';
-import {addCityname} from '../android/app/db/Insertcityname';
-import {
-  addCityDetails,
-  getCityDetail,
-  updateCityDetails,
-  getDeletedCities,
-  deleteCityFromDB,
-} from '../android/app/db/Insertcitiesdetials';
-import {CityDetails} from '../android/app/db/typing';
+import {addCityname} from '../db/Insertcityname';
+import {getDeletedCities, deleteCityFromDB} from '../db/Insertcitiesdetials';
+import {CityDetails} from '../db/typing';
 import {NavigationProp, useFocusEffect} from '@react-navigation/native';
 import {useLocationWeather} from '../context/getLoactionWeather/getLocationWeather';
 import useConnection from '../hooks/useConnection';
 import NetInfo from '@react-native-community/netinfo';
+import {
+  fetchCityWeatherDetailsFromAPI,
+  getCurrentTemperature,
+  addCity,
+  fetchCityDetails,
+  updateCity,
+} from '../utils/helper';
 
-interface HourlyWeather {
-  time: string;
-  temperature: number;
-  humidity: number;
-  precipitation_probability: number;
-  precipitation: number;
-  visibility: number;
-  wind_speed_10m: number;
-  wind_speed_80m: number;
-}
+const TTL = 30000; // 30 seconds
 
 const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   const [response, setResponse] = useState<Record<string, string>[]>();
+  const [visible, setVisible] = React.useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [cityDetails, setCityDetails] = useState<CityDetails[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
   const {loading, db} = useLocationWeather();
   const isConnected = useConnection();
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
-  const [isLoading, setIsLoading] = useState(false);
-
-  const TTL = 30000; // 30 seconds
-
-  const fetchCityWeatherDetailsFromAPI = async (
-    city: string,
-    state: string,
-    country: string,
-  ) => {
-    try {
-      const weather_response = await axios.post(
-        'https://cjxiaojia.com/api/location',
-        {
-          city,
-          state,
-          country,
-        },
-      );
-      return weather_response.data[0].hourly;
-    } catch (error) {
-      console.error('Error fetching weather details from API:', error);
-      return null;
+  const [isActionLoading, setIsActionLoading] = useState({
+    citySelection: false,
+    citySync: false,
+    cityDelete: false,
+  });
+  const [cityToDelete, setCityToDelete] = useState<number | null>(null);
+  useEffect(() => {
+    if (isConnected === null) {
+      return;
     }
-  };
-
-  const fetchCityDetails = async () => {
-    const details = await getCityDetail(db);
-    setCityDetails(details);
-    return details;
-  };
-
-  const updateCity = async (cityDetailsProps: CityDetails) => {
-    await updateCityDetails(db, cityDetailsProps);
-  };
-
-  const addCity = async (cityDetailsProps: CityDetails) => {
-    await addCityDetails(db, cityDetailsProps);
-  };
-
-  const getCurrentTemperature = (weatherData: HourlyWeather[]) => {
-    const currentHour = new Date().getHours();
-    const currentHourData = weatherData.find(entry => {
-      const entryHour = new Date(entry.time).getHours();
-      return entryHour === currentHour;
-    });
-    if (currentHourData) {
-      return currentHourData.temperature;
-    } else {
-      return null;
+    if (!isConnected) {
+      setVisible(true);
     }
-  };
+  }, [isConnected]);
+
+  //get city details from db on initial load
+
+  useEffect(() => {
+    (async () => {
+      if (isFetching) {
+        return;
+      }
+      console.log('fetching city details');
+
+      setCityDetails(await fetchCityDetails());
+      setIsFetching(true);
+    })();
+  }, [isFetching]);
 
   const handleCitySelection = async (
     city: string,
     state: string,
     country: string,
   ) => {
-    setIsLoading(true); // Start loading
-
+    setIsActionLoading({...isActionLoading, citySelection: true});
     try {
-      const cityId = await addCityname(db, {
-        cityName: city,
-        state,
-        country,
+      // Check if the city with the same name and state already exists in the list
+      const existingCity = cityDetails.find(detail => {
+        const cityDetail = detail.city ? JSON.parse(detail.city) : null;
+        return cityDetail?.city === city && cityDetail?.state === state;
       });
+
       const weatherData = await fetchCityWeatherDetailsFromAPI(
         city,
         state,
         country,
       );
 
-      if (weatherData) {
-        const currentTemperature = getCurrentTemperature(weatherData);
-        const cityNameDetails = {
-          cityName: city,
-          state,
-          country,
-        };
+      if (weatherData.hourly) {
+        const currentTemperature = getCurrentTemperature(weatherData.hourly);
+        const cityNameDetails = {city, state, country};
+
         const cityDetails1: CityDetails = {
-          cityId,
+          cityId: existingCity
+            ? existingCity.cityId
+            : await addCityname(db, {city: city, state, country}),
           temperature: currentTemperature?.toString() ?? '0',
           airQuality: '71',
           date: new Date(),
@@ -134,42 +103,68 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
           weatherDetails: JSON.stringify(weatherData),
         };
 
-        await addCity(cityDetails1);
-
-        setCityDetails(prevDetails => [...prevDetails, cityDetails1]);
+        if (existingCity) {
+          console.log('updating city details');
+          await updateCity(cityDetails1);
+          setCityDetails(prevDetails =>
+            prevDetails.map(detail =>
+              detail.cityId === existingCity.cityId ? cityDetails1 : detail,
+            ),
+          );
+        } else {
+          // Add new city details
+          console.log('adding city details');
+          await addCity(cityDetails1);
+          setCityDetails(prevDetails => [...prevDetails, cityDetails1]);
+        }
       }
 
       setModalVisible(false);
     } catch (error) {
       console.error('Error selecting city:', error);
     } finally {
-      setIsLoading(false);
+      setIsActionLoading({...isActionLoading, citySelection: false});
+    }
+  };
+
+  const handleDeleteCity = async (cityId: number) => {
+    setCityToDelete(cityId);
+
+    try {
+      setIsActionLoading(prev => ({...prev, cityDelete: true}));
+      await deleteCityFromDB(db, cityId);
+
+      setCityDetails(await fetchCityDetails());
+    } catch (error) {
+      console.error('Error deleting city:', error);
+      setCityDetails(await fetchCityDetails());
+
+      setIsActionLoading(prev => ({...prev, cityDelete: false}));
+    } finally {
+      setIsActionLoading(prev => ({...prev, cityDelete: false}));
+      setCityToDelete(null);
     }
   };
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300);
-    return () => {
-      clearTimeout(handler);
-    };
+    const handler = setTimeout(() => setSearchQuery(searchQuery), 300);
+    return () => clearTimeout(handler);
   }, [searchQuery]);
 
   useEffect(() => {
-    if (debouncedQuery.length > 0) {
-      getLocations(debouncedQuery);
+    if (searchQuery.length > 0) {
+      getLocations(searchQuery);
     }
-  }, [debouncedQuery]);
+  }, [searchQuery]);
 
-  const getLocations = async (searchQuery: string) => {
+  const getLocations = async (searchQuery1: string) => {
     try {
-      const response = await axios.get(
-        `https://api.geoapify.com/v1/geocode/autocomplete?text=${searchQuery}&format=json&apiKey=07a421da47de4677978182f0c6246538`,
+      const response1 = await axios.get(
+        `https://api.geoapify.com/v1/geocode/autocomplete?text=${searchQuery1}&format=json&apiKey=07a421da47de4677978182f0c6246538`,
       );
-      setResponse(response.data.results);
+      setResponse(response1.data.results);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -178,28 +173,37 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
   };
 
   const syncDeletedCities = async () => {
-    const deletedCities = await getDeletedCities(db);
     try {
+      setIsActionLoading({...isActionLoading, cityDelete: true});
+      const deletedCities = await getDeletedCities(db);
       for (const city of deletedCities) {
         await deleteCityFromDB(db, city.id!);
       }
+      setCityDetails(await fetchCityDetails());
     } catch (error) {
       console.error('Error syncing deleted cities:', error);
+    } finally {
+      setIsActionLoading({...isActionLoading, cityDelete: false});
+      setCityDetails(await fetchCityDetails());
     }
   };
 
   const syncCityWeatherDetails = async () => {
-    const cities = await fetchCityDetails();
+    setIsActionLoading({...isActionLoading, citySync: true});
     try {
+      const cities = await fetchCityDetails();
+      if (cities.length > 0) {
+        setCityDetails(cities);
+      }
       for (const city of cities) {
-        const cityInfo = JSON.parse(city.city);
+        const cityInfo = city.city ? JSON.parse(city.city) : null;
         const weatherData = await fetchCityWeatherDetailsFromAPI(
           cityInfo.cityName,
           cityInfo.state,
           cityInfo.country,
         );
         if (weatherData) {
-          const currentTemperature = getCurrentTemperature(weatherData);
+          const currentTemperature = getCurrentTemperature(weatherData.hourly);
           const updatedCityDetails: CityDetails = {
             ...city,
             temperature: currentTemperature?.toString() ?? '0',
@@ -211,33 +215,31 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
       }
     } catch (error) {
       console.error('Error syncing city weather details:', error);
+    } finally {
+      setIsActionLoading({...isActionLoading, citySync: false});
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchCityDetails();
-    }, []),
-  );
-
-  useEffect(() => {
-    const handleConnectivityChange = () => {
-      if (isConnected) {
-        syncDeletedCities();
-        syncCityWeatherDetails();
-      }
-    };
-
-    const unsubscribe = NetInfo.addEventListener(() => {
-      handleConnectivityChange();
-    });
-
-    return () => {
-      unsubscribe();
-    };
+  const handleConnectivityChange = useCallback(() => {
+    if (isConnected) {
+      syncDeletedCities();
+      syncCityWeatherDetails();
+    }
   }, [isConnected]);
 
-  // Sync every 30 seconds if connected to the internet
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        setCityDetails(await fetchCityDetails());
+      })();
+    }, []),
+  );
+  const onDismissSnackBar = () => setVisible(false);
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(handleConnectivityChange);
+    return () => unsubscribe();
+  }, [handleConnectivityChange]);
+
   useEffect(() => {
     const intervalId = setInterval(() => {
       const currentTime = Date.now();
@@ -250,13 +252,26 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
     return () => clearInterval(intervalId);
   }, [isConnected, lastSyncTime]);
 
+  if (
+    isActionLoading.cityDelete ||
+    isActionLoading.citySelection ||
+    isActionLoading.citySync
+  ) {
+    return (
+      <View style={styles.centeredView}>
+        <ActivityIndicator size="large" color="blue" />
+      </View>
+    );
+  }
+
   return (
-    <View style={{flex: 1}}>
+    <View style={styles.flexContainer}>
       <CitiesCardView
         navigation={navigation}
         cityDetails={cityDetails}
-        loading={loading}
-        fetchCityDetails={fetchCityDetails}
+        loading={loading || isActionLoading.cityDelete}
+        onDeleteCity={handleDeleteCity}
+        cityToDelete={cityToDelete}
       />
 
       <TouchableOpacity
@@ -269,17 +284,17 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
       <Modal
         isVisible={isModalVisible}
         deviceWidth={Dimensions.get('window').width}
-        style={{margin: 0, marginTop: '2%'}}
+        style={styles.modalStyle}
         deviceHeight={Dimensions.get('window').height}
         backdropOpacity={0.9}>
         <View style={styles.container}>
-          <View style={styles.maincontainer}>
+          <View style={styles.mainContainer}>
             <Text onPress={() => setModalVisible(false)} style={styles.cancel}>
               Cancel
             </Text>
-            <Text style={styles.addcity}>Add City</Text>
+            <Text style={styles.addCity}>Add City</Text>
           </View>
-          <View style={styles.Searchbar}>
+          <View style={styles.searchBarContainer}>
             <Searchbar
               placeholder="Search"
               onChangeText={setSearchQuery}
@@ -287,27 +302,21 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
               elevation={3}
             />
           </View>
-          <View style={styles.flatview}>
-            {isLoading ? (
+          <View style={styles.flatView}>
+            {isActionLoading.citySelection ? (
               <ActivityIndicator size="large" color="blue" />
             ) : (
               <FlatList
                 data={response}
                 renderItem={({item}) =>
                   item.city ? (
-                    <View>
-                      <Text
-                        onPress={() =>
-                          handleCitySelection(
-                            item.city,
-                            item.state,
-                            item.country,
-                          )
-                        }
-                        style={styles.cityText}>
-                        {item.city} , {item.state} , {item.country}
-                      </Text>
-                    </View>
+                    <Text
+                      onPress={() =>
+                        handleCitySelection(item.city, item.state, item.country)
+                      }
+                      style={styles.cityText}>
+                      {item.city} , {item.state} , {item.country}
+                    </Text>
                   ) : null
                 }
                 keyExtractor={(item, index) => index.toString()}
@@ -316,11 +325,27 @@ const ManageCities = ({navigation}: {navigation: NavigationProp<any>}) => {
           </View>
         </View>
       </Modal>
+      <View style={styles.snackbarContainer}>
+        <Snackbar
+          visible={visible}
+          onDismiss={onDismissSnackBar}
+          duration={Snackbar.DURATION_SHORT}
+          style={styles.snackbar}>
+          <Text style={styles.snackBarText}>
+            {isConnected
+              ? 'Connected to the internet'
+              : 'No internet connection, please Connect to internet for better expercience'}
+          </Text>
+        </Snackbar>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  flexContainer: {
+    flex: 1,
+  },
   actionButtonIcon: {
     borderRadius: 62,
     backgroundColor: 'red',
@@ -340,7 +365,7 @@ const styles = StyleSheet.create({
     borderTopEndRadius: 20,
     borderTopStartRadius: 20,
   },
-  maincontainer: {
+  mainContainer: {
     flexDirection: 'row',
     paddingTop: 22,
     paddingHorizontal: 16,
@@ -355,17 +380,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 0.8,
   },
-  addcity: {
+  addCity: {
     color: 'black',
     fontFamily: 'Poppins-Medium',
     fontSize: 16,
     textAlign: 'left',
     flex: 1,
   },
-  Searchbar: {
+  searchBarContainer: {
     padding: 20,
   },
-  flatview: {
+  flatView: {
     flex: 1,
     maxHeight: '35%',
     width: '85%',
@@ -376,6 +401,29 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Poppins-Medium',
     marginBottom: 10,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalStyle: {
+    margin: 0,
+    marginTop: '2%',
+  },
+  snackbarContainer: {alignItems: 'center', padding: 20},
+  snackbar: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    maxHeight: 70,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+  },
+  snackBarText: {
+    color: 'white',
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
 

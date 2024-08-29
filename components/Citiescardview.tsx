@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -8,32 +8,54 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {markCityAsDeleted} from '../android/app/db/Insertcitiesdetials';
 import {useLocationWeather} from '../context/getLoactionWeather/getLocationWeather';
-import {NavigationProp} from '@react-navigation/native';
-import {CityDetails} from '../android/app/db/typing';
+import {NavigationProp, useFocusEffect} from '@react-navigation/native';
+import {CityDetails} from '../db/typing';
+import {getCurrentWeatherData} from '../utils/helper';
 
 interface CitiesCardViewProps {
   navigation: NavigationProp<any>;
   cityDetails: CityDetails[];
   loading: boolean;
-  fetchCityDetails: () => Promise<CityDetails[]>;
+  onDeleteCity: (cityId: number) => Promise<void>;
+  cityToDelete: number | null;
 }
 
 const {width} = Dimensions.get('window');
+
+const getBackgroundColor = (
+  temperature: number | null,
+  precipitationProbability: number | null,
+): string => {
+  if (temperature === null || precipitationProbability === null) {
+    return 'gray'; // default color when data is missing
+  }
+  if (precipitationProbability > 80) {
+    return 'darkblue'; // High chance of rain
+  } else if (temperature > 30) {
+    return 'red'; // Hot temperature
+  } else if (temperature > 20) {
+    return 'orange'; // Warm temperature
+  } else if (temperature > 10) {
+    return 'yellow'; // Mild temperature
+  } else {
+    return 'lightblue'; // Cold temperature
+  }
+};
 
 const CitiesCardView: React.FC<CitiesCardViewProps> = ({
   navigation,
   loading,
   cityDetails,
-  fetchCityDetails,
+  onDeleteCity,
+  cityToDelete,
 }) => {
   const [selectedCities, setSelectedCities] = useState<Set<number>>(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
-  const {setSelectedCity, db} = useLocationWeather();
-  const [CityDetails, setCityDetails] = useState<CityDetails[]>(cityDetails);
+  const {setSelectedCity} = useLocationWeather();
 
   const handleLongPress = (id: number) => {
     setSelectionMode(true);
@@ -55,20 +77,59 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({
   const handleDelete = async () => {
     try {
       for (const id of selectedCities) {
-        await markCityAsDeleted(db, id);
+        await onDeleteCity(id);
       }
       setSelectionMode(false);
       setSelectedCities(new Set());
-      setCityDetails(await fetchCityDetails());
     } catch (error) {
-      console.error('Error marking cities as deleted:', error);
+      console.error('Error deleting cities:', error);
     }
   };
 
+  // Handle the back press event
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (selectionMode) {
+          setSelectionMode(false);
+          setSelectedCities(new Set());
+          return true; // Prevent default behavior (back navigation)
+        }
+        return false; // Allow default behavior (back navigation)
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [selectionMode]),
+  );
+
   const renderCityCard = ({item}: {item: CityDetails}) => {
     const isSelected = selectedCities.has(item.id || 0);
-    const currentTemperature = parseFloat(item.temperature) || 'N/A';
-    const cityDetails = item.city ? JSON.parse(item.city) : null;
+    const isDeleting = cityToDelete === item.cityId; // Ensure correct ID comparison
+
+    const weatherDetails = item.weatherDetails
+      ? JSON.parse(item.weatherDetails)
+      : null;
+
+    const currentWeatherData = weatherDetails
+      ? getCurrentWeatherData(weatherDetails.hourly)
+      : null;
+
+    const currentTemperature = currentWeatherData
+      ? currentWeatherData.temperature
+      : null;
+
+    const precipitationProbability = currentWeatherData
+      ? currentWeatherData.precipitation_probability
+      : null;
+
+    const cityDetails1 = item.city ? JSON.parse(item.city) : null;
+    const backgroundColor = getBackgroundColor(
+      currentTemperature,
+      precipitationProbability,
+    );
 
     return (
       <TouchableOpacity
@@ -78,44 +139,65 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({
             if (item.id !== undefined) {
               toggleSelection(item.id);
             }
-          } else {
+          } else if (!isDeleting) {
             setSelectedCity(
-              cityDetails.cityName,
-              cityDetails.state,
-              cityDetails.country,
+              cityDetails1.city,
+              cityDetails1.state,
+              cityDetails1.country,
             );
             if (!loading) {
               navigation.navigate('Home');
             }
           }
         }}
-        style={[styles.container, isSelected && styles.selectedContainer]}>
-        <View style={styles.smallContainer}>
-          <Text style={styles.textLeft}>
-            {cityDetails.cityName ? cityDetails.cityName : 'Unknown'}
-          </Text>
-          <Image source={require('../assets/gps.png')} style={styles.image} />
-          <Text style={styles.textRight}>{currentTemperature}°</Text>
-        </View>
-        <View style={styles.smallContainer2}>
-          <Text style={styles.textLeft2}>Air Quality : </Text>
-          <Text style={styles.textLeft2}>{item.airQuality ?? 'N/A'}</Text>
-          <Text style={styles.textLeft2}> - </Text>
-          <Text style={styles.textLeft2}>Good</Text>
-          <Text style={styles.textRight2}>Partly cloudy</Text>
-        </View>
-        {isSelected && (
-          <Icon
-            name="checkmark-circle"
-            size={30}
+        style={[
+          styles.container,
+          {backgroundColor: backgroundColor},
+          isSelected && styles.selectedContainer,
+          isDeleting && styles.deletingContainer,
+        ]}
+        disabled={isDeleting} // Disable the touchable if the city is being deleted
+      >
+        {isDeleting ? (
+          <ActivityIndicator
+            size="small"
             color="white"
-            style={styles.selectionIcon}
+            style={styles.loadingIndicator}
           />
+        ) : (
+          <>
+            <View style={styles.smallContainer}>
+              <Text style={styles.textLeft}>
+                {cityDetails1.city ? cityDetails1.city : 'Unknown'}
+              </Text>
+              <Image
+                source={require('../assets/gps.png')}
+                style={styles.image}
+              />
+              <Text style={styles.textRight}>{currentTemperature}°</Text>
+            </View>
+            <View style={styles.smallContainer2}>
+              <Text style={styles.textLeft2}>Air Quality : </Text>
+              <Text style={styles.textLeft2}>
+                {item.airQuality === 'N/A' ? '71' : item.airQuality}
+              </Text>
+              <Text style={styles.textLeft2}> - </Text>
+              <Text style={styles.textLeft2}>Good</Text>
+              <Text style={styles.textRight2}>Partly cloudy</Text>
+            </View>
+            {isSelected && (
+              <Icon
+                name="checkmark-circle"
+                size={30}
+                color="white"
+                style={styles.selectionIcon}
+              />
+            )}
+          </>
         )}
       </TouchableOpacity>
     );
   };
-
   return (
     <View style={{flex: 1}}>
       {selectionMode && (
@@ -133,7 +215,10 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({
         <FlatList
           data={cityDetails}
           renderItem={renderCityCard}
-          keyExtractor={item => item.id?.toString() ?? item.cityId.toString()}
+          keyExtractor={item =>
+            item.id?.toString() ?? item.cityId?.toString() ?? ''
+          }
+          contentContainerStyle={{flexGrow: 1}}
         />
       )}
     </View>
@@ -142,7 +227,6 @@ const CitiesCardView: React.FC<CitiesCardViewProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'blue',
     margin: width * 0.05,
     padding: width * 0.08,
     borderRadius: 10,
@@ -154,7 +238,11 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   selectedContainer: {
-    backgroundColor: 'darkblue',
+    borderWidth: 2,
+    borderColor: 'yellow',
+  },
+  deletingContainer: {
+    opacity: 0.5,
   },
   textLeft: {
     color: 'white',

@@ -15,12 +15,20 @@ import AirQuality from '../components/Home/AirQuality';
 import SunriseSunset from '../components/Home/SunRiseSunset';
 import {useLocationWeather} from '../context/getLoactionWeather/getLocationWeather';
 import {Images} from '../constants/images';
-import {getCityDetail} from '../android/app/db/Insertcitiesdetials';
+import {getCityDetail} from '../db/Insertcitiesdetials';
+import {RefreshControl} from 'react-native';
 const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   const isConnected = useConnection();
   const [visible, setVisible] = React.useState(false);
-  const {hourlyWeather, dailyWeather, getCurrentTemperature, db, selectedCity} =
-    useLocationWeather();
+  const {
+    hourlyWeather,
+    dailyWeather,
+    syncCityWeatherDetails,
+    getCurrentTemperature,
+    db,
+    selectedCity,
+  } = useLocationWeather();
+  const [refreshing, setRefreshing] = React.useState(false);
   const onDismissSnackBar = () => setVisible(false);
   useEffect(() => {
     getCityDetail(db);
@@ -116,6 +124,19 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
   );
   const backgroundImage = getWeatherIcon(weatherName);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await syncCityWeatherDetails();
+      setRefreshing(false);
+    } catch (error) {
+      console.error('Failed to sync city weather details:', error);
+      setRefreshing(false);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ImageBackground
@@ -125,6 +146,9 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
       />
       <Header navigation={navigation} city={city} />
       <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollView}>
         <Temperatrure
@@ -147,7 +171,9 @@ const Home = ({navigation}: {navigation: NavigationProp<any>}) => {
           duration={Snackbar.DURATION_SHORT}
           style={styles.snackbar}>
           <Text style={styles.snackBarText}>
-            No Internet! Connect to Cellular or Wifi Network
+            {isConnected
+              ? 'Connected to the internet'
+              : 'No internet connection, please Connect to internet for better'}
           </Text>
         </Snackbar>
       </View>

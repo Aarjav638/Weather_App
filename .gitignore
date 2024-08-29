@@ -41,6 +41,10 @@ yarn.lock
 node_modules/
 npm-debug.log
 yarn-error.log
+.bundle
+.env
+.env.local
+.yarn
 
 # fastlane
 #
